@@ -3,47 +3,49 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>宿舍快乐中心 · 可爱版</title>
+  <title>lala land</title>
   <style>
     * { box-sizing: border-box; }
     :root {
-      --pink:#ff8fbd;
-      --hot:#ff5aa5;
-      --soft:#fff0f7;
-      --text:#5b4050;
+      --pink:#ff7aa8;
+      --hot:#e84f88;
+      --soft:#fff7fb;
+      --text:#42515a;
       --card:rgba(255,255,255,.88);
-      --purple:#9b5de5;
-      --yellow:#fff4aa;
+      --purple:#7c6ee6;
+      --yellow:#fff2a6;
+      --mint:#9ee6cf;
+      --sky:#dff3ff;
     }
     body {
       margin:0;
       font-family: "Comic Sans MS", "PingFang SC", "Microsoft YaHei", sans-serif;
       color:var(--text);
       background:
-        radial-gradient(circle at 10% 10%, #ffe0ef 0 18%, transparent 19%),
-        radial-gradient(circle at 90% 0%, #ffe7f4 0 22%, transparent 23%),
-        linear-gradient(135deg, #fff7fb 0%, #fff0f7 45%, #fffaf0 100%);
+        radial-gradient(circle at 10% 10%, #dff3ff 0 18%, transparent 19%),
+        radial-gradient(circle at 90% 0%, #e5fff6 0 22%, transparent 23%),
+        linear-gradient(135deg, #fff9fd 0%, #f0fff8 48%, #fffbea 100%);
       min-height:100vh;
     }
     .bg {
       position:fixed; inset:0; pointer-events:none; opacity:.35;
-      background-image:radial-gradient(#ffaad0 2px, transparent 2px);
+      background-image:radial-gradient(#9ee6cf 2px, transparent 2px);
       background-size:34px 34px;
     }
     .wrap { max-width:1180px; margin:0 auto; padding:22px 16px 90px; position:relative; }
     header { text-align:center; padding:22px 10px 18px; }
     .pill {
       display:inline-flex; gap:8px; align-items:center; padding:9px 16px;
-      border:2px solid #ffc1dc; border-radius:999px; background:#fff;
-      box-shadow:0 8px 20px rgba(255,90,165,.13);
-      font-weight:700; color:#d94f93;
+      border:2px solid #bdeedd; border-radius:999px; background:#fff;
+      box-shadow:0 8px 20px rgba(72,170,137,.13);
+      font-weight:700; color:#3e8f7b;
     }
     h1 {
       margin:18px 0 8px;
       font-size:clamp(34px, 7vw, 72px);
       line-height:1;
-      color:#ff5aa5;
-      text-shadow:3px 3px 0 #fff, 6px 6px 0 #ffd4e8;
+      color:#e84f88;
+      text-shadow:3px 3px 0 #fff, 6px 6px 0 #c9f3e6;
     }
     .sub { max-width:760px; margin:0 auto; line-height:1.75; color:#7d6070; }
     .grid { display:grid; gap:16px; }
@@ -53,10 +55,10 @@
     @media (max-width:900px){ .three,.two,.four { grid-template-columns:1fr; } }
     .card {
       background:var(--card);
-      border:2px solid rgba(255,176,211,.9);
+      border:2px solid rgba(189,238,221,.95);
       border-radius:28px;
       padding:18px;
-      box-shadow:0 14px 36px rgba(255,90,165,.14);
+      box-shadow:0 14px 36px rgba(72,170,137,.13);
       backdrop-filter: blur(12px);
       position:relative;
       overflow:hidden;
@@ -64,12 +66,12 @@
     .card:before{
       content:"";
       position:absolute; right:-35px; top:-35px; width:90px; height:90px;
-      border-radius:50%; background:#ffe0ef; opacity:.8;
+      border-radius:50%; background:#e5fff6; opacity:.8;
     }
     .title {
       display:flex; align-items:center; gap:8px;
       font-size:20px; font-weight:900; margin-bottom:14px;
-      color:#d94f93; position:relative;
+      color:#3e8f7b; position:relative;
     }
     .roommate { text-align:center; }
     .avatarBox {
@@ -134,6 +136,9 @@
       background:transparent; color:#d94f93; box-shadow:none;
     }
     .tabBtn.active { background:#ff8fbd; color:#fff; box-shadow:0 8px 18px rgba(255,90,165,.16); }
+    .courseControls { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
+    .courseSummary { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:12px; }
+    .courseSummary .item { min-height:76px; }
     .bar { height:12px; background:#ffe0ef; border-radius:999px; overflow:hidden; margin:10px 0; }
     .bar span { display:block; height:100%; background:linear-gradient(90deg,#ff8fbd,#ff5aa5); border-radius:999px; }
     input, select {
@@ -230,6 +235,7 @@
     footer { text-align:center; margin-top:24px; color:#9a7889; }
     @media (max-width:900px){
       .photoGrid { grid-template-columns:repeat(2,1fr); }
+      .courseControls,.courseSummary { grid-template-columns:1fr; }
       .card { border-radius:22px; padding:15px; }
       .course { align-items:flex-start; }
       .bottomNav { bottom:10px; }
@@ -240,12 +246,30 @@
 <div class="bg"></div>
 <div class="wrap">
   <header>
-    <div class="pill">🎀 洪艺嘉 · 牛蕾晴 · 鲍炎岐 · 班戟 🐾</div>
-    <h1>宿舍快乐中心</h1>
-    <p class="sub">粉色可爱版 · 王者荣耀同好会 · 课程提醒 · 考试倒计时 · 星座运势 · 班戟小猫借住纪念站</p>
+    <div class="pill">洪艺嘉 · 牛蕾晴 · 鲍炎岐 · 班戟</div>
+    <h1>lala land</h1>
+    <p class="sub">三个人和一只小猫的共享小站 · 课表 · 天气 · 开黑 · 照片墙 · 留言 · 今日吃什么</p>
   </header>
 
   <section class="grid three" id="people"></section>
+
+  <section class="card" id="profiles" style="margin-top:16px;">
+    <div class="title">🪪 个人资料</div>
+    <div class="courseControls">
+      <select id="profilePerson" onchange="renderProfileEditor()"></select>
+      <input id="profileNickname" placeholder="昵称" />
+    </div>
+    <div class="grid three">
+      <input id="profileMbti" placeholder="MBTI / 星球身份" />
+      <input id="profileDrink" placeholder="爱喝什么" />
+      <input id="profileRole" placeholder="王者常用位置" />
+    </div>
+    <div class="row" style="margin-top:10px;">
+      <input id="profileMotto" placeholder="今日宣言 / 个性签名" />
+      <button onclick="saveProfile()">保存资料</button>
+    </div>
+    <div class="grid three" id="profileCards" style="margin-top:14px;"></div>
+  </section>
 
   <section class="grid two" id="today" style="margin-top:16px;">
     <div class="card">
@@ -282,9 +306,13 @@
 
     <div class="card">
       <div class="title">📚 课程速览</div>
-      <div class="tabs" id="courseTabs"></div>
+      <div class="courseControls">
+        <select id="courseOwner" onchange="selectCourseOwner(this.value)"></select>
+        <select id="courseDay" onchange="selectCourseDay(this.value)"></select>
+      </div>
+      <div class="courseSummary" id="courseSummary"></div>
       <div class="list" id="courses"></div>
-      <p class="small">可切换查看牛蕾晴和洪艺嘉的日常课表；今日课程会自动高亮。</p>
+      <p class="small">选择舍友和星期查看课表，默认显示今天，不再把整周堆成长列表。</p>
     </div>
 
     <div class="card">
@@ -316,9 +344,9 @@
     </div>
 
     <div class="card">
-      <div class="title">🎲 今日幸运舍友</div>
-      <div class="bigText" id="lucky">点击抽取今日幸运舍友</div>
-      <button onclick="pickLucky()">抽一下</button>
+      <div class="title">🍜 今日吃饭灵感</div>
+      <div class="bigText" id="mealHint">不知道吃什么的时候，交给下面的抽签。</div>
+      <button onclick="drawDinner()">直接抽一个</button>
     </div>
   </section>
 
@@ -331,7 +359,8 @@
         <button class="btn2" onclick="pickHeroChallenge()">随机英雄挑战</button>
       </div>
       <div class="checkList" id="gameRoom" style="margin-top:12px;"></div>
-      <p class="small">点一下切换在线状态，今晚谁能上号一眼看清。</p>
+      <button class="btn3" onclick="randomizeGameRoles()">随机分配位置</button>
+      <p class="small">点一下切换在线状态，也可以一键随机今晚位置。</p>
     </div>
 
     <div class="card">
@@ -355,11 +384,9 @@
     <div class="title">🍜 今晚吃什么抽签</div>
     <div class="bigText" id="dinnerResult">选择困难症交给命运。</div>
     <div class="row">
-      <input id="dinnerInput" placeholder="加一个候选，比如：烤肉饭、螺蛳粉、麦当劳" onkeydown="if(event.key==='Enter') addDinnerOption()" />
-      <button onclick="addDinnerOption()">加入候选</button>
       <button class="btn2" onclick="drawDinner()">开始抽签</button>
     </div>
-    <div class="list" id="dinnerOptions" style="margin-top:12px;"></div>
+    <p class="small">候选池已内置 30 个，页面不展开显示，直接抽就好。</p>
   </section>
 
   <section class="grid two" id="album" style="margin-top:16px;">
@@ -448,10 +475,16 @@
     { name:'牛蕾晴', birthday:'12.28', sign:'摩羯座', avatar:'🐐', score:95 },
     { name:'鲍炎岐', birthday:'1.26', sign:'水瓶座', avatar:'🌊', score:88 }
   ];
+  const profileDefault = {
+    '洪艺嘉': { nickname:'', mbti:'', drink:'', role:'', motto:'' },
+    '牛蕾晴': { nickname:'', mbti:'', drink:'', role:'', motto:'' },
+    '鲍炎岐': { nickname:'', mbti:'', drink:'', role:'', motto:'' }
+  };
 
   let people = JSON.parse(localStorage.getItem('cutePeople_v2') || JSON.stringify(peopleDefault));
+  let profiles = JSON.parse(localStorage.getItem('lalaProfiles_v1') || JSON.stringify(profileDefault));
   let messages = JSON.parse(localStorage.getItem('cuteMessages_v2') || JSON.stringify([
-    {author:'系统', text:'欢迎来到宿舍快乐中心 🎀'},
+    {author:'系统', text:'欢迎来到 lala land。'},
     {author:'班戟', text:'喵，我只是来借住一下，但我会留下可爱回忆。'}
   ]));
   let memories = JSON.parse(localStorage.getItem('cuteMemories_v3') || JSON.stringify([
@@ -462,6 +495,7 @@
   ]));
   let photos = JSON.parse(localStorage.getItem('cutePhotos_v4') || '[]');
   let selectedCourseOwner = localStorage.getItem('selectedCourseOwner_v1') || '牛蕾晴';
+  let selectedCourseDay = localStorage.getItem('selectedCourseDay_v1') || weekdayName();
   let moods = JSON.parse(localStorage.getItem('cuteMoods_v1') || '{}');
   let catStatus = localStorage.getItem('cuteCatStatus_v1') || '班戟今天想贴贴 🐾';
   let gameRoom = JSON.parse(localStorage.getItem('cuteGameRoom_v1') || JSON.stringify({
@@ -474,9 +508,13 @@
     { id:'vote_milk_tea', name:'奶茶', count:0 },
     { id:'vote_rice', name:'烤肉饭', count:0 }
   ]));
-  let dinnerOptions = JSON.parse(localStorage.getItem('cuteDinnerOptions_v1') || JSON.stringify([
-    '麻辣烫','烤肉饭','黄焖鸡','螺蛳粉','麦当劳','塔斯汀','小火锅','便利店饭团'
-  ]));
+  let dinnerOptions = JSON.parse(localStorage.getItem('cuteDinnerOptions_v1') || '[]');
+  const defaultDinnerOptions = [
+    '麻辣烫','烤肉饭','黄焖鸡','螺蛳粉','麦当劳','塔斯汀','小火锅','便利店饭团','兰州拉面','沙县小吃',
+    '炸鸡汉堡','寿司饭团','酸菜鱼','冒菜','米线','重庆小面','牛肉饭','煲仔饭','盖浇饭','鸡公煲',
+    '麻辣香锅','烤冷面','饺子馄饨','轻食沙拉','韩式拌饭','关东煮','炸串','披萨','粥铺','宿舍泡面加蛋'
+  ];
+  if(dinnerOptions.length < 30) dinnerOptions = [...new Set([...dinnerOptions, ...defaultDinnerOptions])].slice(0, 30);
 
   const weatherTips = [
     '南京栖霞区明天可能有阵雨，记得带伞 ☔',
@@ -561,6 +599,20 @@
       {day:'周四', name:'毛泽东思想和中国特色社会主义理论体系概论', time:'18:30-20:20', place:'逸B-212'},
       {day:'周五', name:'数据科学与数据分析', time:'09:00-12:00', place:'仙II-303'},
       {day:'周五', name:'信息组织', time:'14:00-18:00', place:'教222 / 南园综合楼'}
+    ],
+    '鲍炎岐': [
+      {day:'周一', name:'数据结构', time:'10:10-12:00', place:'仙I-203'},
+      {day:'周一', name:'离散数学', time:'14:00-15:50', place:'仙I-115'},
+      {day:'周一', name:'计量经济学', time:'16:10-18:00', place:'仙I-104'},
+      {day:'周二', name:'数据科学与数据分析', time:'08:00-09:50 / 18:30-20:20', place:'仙II-303 / 基础实验楼'},
+      {day:'周二', name:'离散数学', time:'10:10-12:00', place:'仙I-115'},
+      {day:'周二', name:'气排球', time:'14:00-15:50', place:'四组团一楼'},
+      {day:'周三', name:'管理信息系统', time:'08:00-09:50 / 10:10-12:00', place:'仙II-303 / 基础实验楼'},
+      {day:'周三', name:'习近平新时代中国特色社会主义思想概论', time:'18:30-20:20', place:'仙I-109'},
+      {day:'周四', name:'信息分析', time:'14:00-17:00', place:'仙I-308'},
+      {day:'周四', name:'毛泽东思想和中国特色社会主义理论体系概论', time:'18:30-20:20', place:'逸B-212'},
+      {day:'周五', name:'数据科学与数据分析', time:'09:00-12:00', place:'仙II-303'},
+      {day:'周五', name:'管理统计学', time:'14:00-18:00', place:'仙I-216 / 基础实验楼'}
     ]
   };
 
@@ -572,15 +624,17 @@
   }
 
   function stateData(){
-    return { people, messages, memories, photos, moods, catStatus, gameRoom, foodVotes, dinnerOptions };
+    return { people, profiles, messages, memories, photos, moods, catStatus, gameRoom, foodVotes, dinnerOptions };
   }
 
   function saveLocal(){
     localStorage.setItem('cutePeople_v2', JSON.stringify(people));
+    localStorage.setItem('lalaProfiles_v1', JSON.stringify(profiles));
     localStorage.setItem('cuteMessages_v2', JSON.stringify(messages));
     localStorage.setItem('cuteMemories_v3', JSON.stringify(memories));
     localStorage.setItem('cutePhotos_v4', JSON.stringify(photos));
     localStorage.setItem('selectedCourseOwner_v1', selectedCourseOwner);
+    localStorage.setItem('selectedCourseDay_v1', selectedCourseDay);
     localStorage.setItem('cuteMoods_v1', JSON.stringify(moods));
     localStorage.setItem('cuteCatStatus_v1', catStatus);
     localStorage.setItem('cuteGameRoom_v1', JSON.stringify(gameRoom));
@@ -612,6 +666,7 @@
     if(!data) return;
     applyingRemote = true;
     if(Array.isArray(data.people)) people = data.people;
+    if(data.profiles && typeof data.profiles === 'object') profiles = { ...profileDefault, ...data.profiles };
     if(Array.isArray(data.messages)) messages = normalizeMessages(data.messages);
     if(Array.isArray(data.memories)) memories = data.memories;
     if(Array.isArray(data.photos)) photos = data.photos;
@@ -619,9 +674,9 @@
     if(typeof data.catStatus === 'string') catStatus = data.catStatus;
     if(data.gameRoom && typeof data.gameRoom === 'object') gameRoom = data.gameRoom;
     if(Array.isArray(data.foodVotes)) foodVotes = data.foodVotes;
-    if(Array.isArray(data.dinnerOptions)) dinnerOptions = data.dinnerOptions;
+    if(Array.isArray(data.dinnerOptions)) dinnerOptions = [...new Set([...data.dinnerOptions, ...defaultDinnerOptions])].slice(0, 30);
     saveLocal();
-    renderPeople(); renderHoro(); renderMsg(); renderMemories(); renderPhotos(); renderInteractiveBoards();
+    renderPeople(); renderProfiles(); renderHoro(); renderMsg(); renderMemories(); renderPhotos(); renderInteractiveBoards();
     applyingRemote = false;
   }
 
@@ -697,6 +752,7 @@
   }
 
   messages = normalizeMessages(messages);
+  profiles = { ...profileDefault, ...profiles };
 
   function renderPeople(){
     document.getElementById('people').innerHTML = people.map((p,i)=>`
@@ -714,34 +770,80 @@
     `).join('');
   }
 
-  function renderCourseTabs(){
-    document.getElementById('courseTabs').innerHTML = Object.keys(courseBooks).map(owner=>`
-      <button class="tabBtn ${owner === selectedCourseOwner ? 'active' : ''}" onclick="selectCourseOwner('${owner}')">${owner}</button>
-    `).join('');
+  function renderProfileEditor(){
+    const select = document.getElementById('profilePerson');
+    if(!select.value) select.value = people[0]?.name || '洪艺嘉';
+    const profile = profiles[select.value] || profileDefault[select.value] || {};
+    document.getElementById('profileNickname').value = profile.nickname || '';
+    document.getElementById('profileMbti').value = profile.mbti || '';
+    document.getElementById('profileDrink').value = profile.drink || '';
+    document.getElementById('profileRole').value = profile.role || '';
+    document.getElementById('profileMotto').value = profile.motto || '';
+  }
+
+  function renderProfiles(){
+    const personSelect = document.getElementById('profilePerson');
+    personSelect.innerHTML = people.map(p=>`<option>${p.name}</option>`).join('');
+    renderProfileEditor();
+    document.getElementById('profileCards').innerHTML = people.map(p=>{
+      const profile = profiles[p.name] || {};
+      return `
+        <div class="item">
+          <b>${p.name}${profile.nickname ? ' · ' + escapeHtml(profile.nickname) : ''}</b><br>
+          <span class="small">MBTI：${escapeHtml(profile.mbti || '待填写')}</span><br>
+          <span class="small">爱喝：${escapeHtml(profile.drink || '待填写')}</span><br>
+          <span class="small">常用位置：${escapeHtml(profile.role || '待填写')}</span><br>
+          <span class="small">${escapeHtml(profile.motto || '还没有今日宣言。')}</span>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function saveProfile(){
+    const name = document.getElementById('profilePerson').value;
+    profiles[name] = {
+      nickname: document.getElementById('profileNickname').value.trim(),
+      mbti: document.getElementById('profileMbti').value.trim(),
+      drink: document.getElementById('profileDrink').value.trim(),
+      role: document.getElementById('profileRole').value.trim(),
+      motto: document.getElementById('profileMotto').value.trim()
+    };
+    save(); renderProfiles();
   }
 
   function selectCourseOwner(owner){
     selectedCourseOwner = owner;
     saveLocal();
-    renderCourseTabs();
+    renderCourses();
+  }
+
+  function selectCourseDay(day){
+    selectedCourseDay = day;
+    saveLocal();
     renderCourses();
   }
 
   function renderCourses(){
     const today = weekdayName();
     const courses = courseBooks[selectedCourseOwner] || [];
+    const dayCourses = courses.filter(c => c.day === selectedCourseDay);
     const todayCourses = courses.filter(c => c.day === today);
-    document.getElementById('courses').innerHTML = courses.map(c=>`
-      <div class="item course ${c.day === today ? 'todayCourse' : ''}">
+    document.getElementById('courseOwner').innerHTML = Object.keys(courseBooks).map(owner=>`
+      <option ${owner === selectedCourseOwner ? 'selected' : ''}>${owner}</option>
+    `).join('');
+    document.getElementById('courseDay').innerHTML = ['周一','周二','周三','周四','周五','周六','周日'].map(day=>`
+      <option ${day === selectedCourseDay ? 'selected' : ''}>${day}</option>
+    `).join('');
+    document.getElementById('courseSummary').innerHTML = `
+      <div class="item todayCourse"><b>今天｜${today}</b><br><span class="small">${todayCourses.length ? todayCourses.map(c=>c.name).join('、') : '今天没有课。'}</span></div>
+      <div class="item"><b>当前查看｜${selectedCourseDay}</b><br><span class="small">${selectedCourseOwner} · ${dayCourses.length} 门课</span></div>
+    `;
+    document.getElementById('courses').innerHTML = dayCourses.length ? dayCourses.map(c=>`
+      <div class="item course ${selectedCourseDay === today ? 'todayCourse' : ''}">
         <div><b>${c.day} · ${c.name}</b><br><span class="small">${c.time}</span></div>
         <span class="badge">${c.place}</span>
       </div>
-    `).join('') + `
-      <div class="item todayCourse">
-        <b>${selectedCourseOwner} 今日提醒｜${today}</b><br>
-        <span class="small">${todayCourses.length ? todayCourses.map(c => c.name).join('、') : '今天课表空空，可以安排复习或快乐。'}</span>
-      </div>
-    `;
+    `).join('') : '<div class="empty">这一天课表空空，可以安排复习、开黑或看班戟。</div>';
   }
 
   function dailyPick(options, salt){
@@ -841,12 +943,7 @@
   }
 
   function renderDinnerOptions(){
-    document.getElementById('dinnerOptions').innerHTML = dinnerOptions.map((option,i)=>`
-      <div class="checkItem">
-        <span>${escapeHtml(option)}</span>
-        <button class="miniBtn" onclick="deleteDinnerOption(${i})">删除</button>
-      </div>
-    `).join('');
+    return;
   }
 
   function renderInteractiveBoards(){
@@ -923,7 +1020,6 @@
   function pickWeather(){ document.getElementById('weather').innerText = weatherTips[Math.floor(Math.random()*weatherTips.length)]; }
   function pickHero(){ document.getElementById('gamePlan').innerText = '今晚王者身份：' + roles[Math.floor(Math.random()*roles.length)] + ' 🎮'; }
   function pickActivity(){ document.getElementById('gamePlan').innerText = '今晚安排：' + activities[Math.floor(Math.random()*activities.length)] + ' ✨'; }
-  function pickLucky(){ const p = people[Math.floor(Math.random()*people.length)]; document.getElementById('lucky').innerText = p.name + ' 今日欧气爆棚！'; }
   function pickKingLuck(){ document.getElementById('kingZone').innerText = kingLuck[Math.floor(Math.random()*kingLuck.length)]; }
   function pickHeroChallenge(){ document.getElementById('kingZone').innerText = '随机英雄挑战：今晚必须玩 ' + heroes[Math.floor(Math.random()*heroes.length)] + '！'; }
 
@@ -943,6 +1039,17 @@
     save(); renderGameRoom();
   }
 
+  function randomizeGameRoles(){
+    const rolePool = ['对抗路','打野','中路','发育路','游走'];
+    const shuffled = [...rolePool].sort(() => Math.random() - .5);
+    people.forEach((p,i) => {
+      if(!gameRoom[p.name]) gameRoom[p.name] = { online:false, role:'待定' };
+      gameRoom[p.name].role = shuffled[i % shuffled.length];
+    });
+    document.getElementById('kingZone').innerText = '今晚位置已随机分配，先别抢位置。';
+    save(); renderGameRoom();
+  }
+
   function voteFood(id){
     const option = foodVotes.find(v => v.id === id);
     if(!option) return;
@@ -958,19 +1065,6 @@
     save(); renderFoodVotes();
   }
 
-  function addDinnerOption(){
-    const input = document.getElementById('dinnerInput');
-    if(!input.value.trim()) return;
-    dinnerOptions.push(input.value.trim());
-    input.value = '';
-    save(); renderDinnerOptions();
-  }
-
-  function deleteDinnerOption(i){
-    dinnerOptions.splice(i,1);
-    save(); renderDinnerOptions();
-  }
-
   function drawDinner(){
     if(!dinnerOptions.length){
       document.getElementById('dinnerResult').innerText = '候选空空，先加一个想吃的。';
@@ -978,6 +1072,8 @@
     }
     const pick = dinnerOptions[Math.floor(Math.random()*dinnerOptions.length)];
     document.getElementById('dinnerResult').innerText = '今晚就吃：' + pick + '！';
+    const mealHint = document.getElementById('mealHint');
+    if(mealHint) mealHint.innerText = '命运刚刚抽到了：' + pick;
   }
 
   function addMsg(){
@@ -1081,8 +1177,9 @@
         if(typeof data.catStatus === 'string') catStatus = data.catStatus;
         if(data.gameRoom && typeof data.gameRoom === 'object') gameRoom = data.gameRoom;
         if(Array.isArray(data.foodVotes)) foodVotes = data.foodVotes;
-        if(Array.isArray(data.dinnerOptions)) dinnerOptions = data.dinnerOptions;
-        save(); renderPeople(); renderHoro(); renderMsg(); renderMemories(); renderPhotos(); renderInteractiveBoards();
+        if(Array.isArray(data.dinnerOptions)) dinnerOptions = [...new Set([...data.dinnerOptions, ...defaultDinnerOptions])].slice(0, 30);
+        if(data.profiles && typeof data.profiles === 'object') profiles = { ...profileDefault, ...data.profiles };
+        save(); renderPeople(); renderProfiles(); renderHoro(); renderMsg(); renderMemories(); renderPhotos(); renderInteractiveBoards();
         alert('宿舍数据导入成功！');
       } catch (error) {
         alert('导入失败，请确认是之前导出的 JSON 文件。');
@@ -1092,7 +1189,7 @@
   }
 
   function copyTip(){
-    const text='这是我们的宿舍快乐中心网页！打开链接/HTML 就能看，留言数据可以用“导出宿舍数据”互相传 🎀';
+    const text='这是我们的 lala land 网页！打开链接就能一起看课表、留言、抽晚饭和上传班戟照片。';
     if(navigator.clipboard) navigator.clipboard.writeText(text);
     alert('分享文案已复制，可以发给她们啦！');
   }
@@ -1116,7 +1213,7 @@
   }
 
   renderPeople();
-  renderCourseTabs();
+  renderProfiles();
   renderCourses();
   renderHoro();
   renderMsg();
