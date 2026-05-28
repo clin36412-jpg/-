@@ -109,6 +109,20 @@
       color:#7a365d; line-height:1.5;
     }
     .small { font-size:13px; color:#8b7180; line-height:1.7; }
+    .weatherMeta {
+      display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin:12px 0;
+    }
+    .weatherMeta div {
+      background:#fff; border:1px solid #ffd4e8; border-radius:16px;
+      padding:10px; text-align:center; font-size:13px; color:#8b7180;
+    }
+    .weatherMeta b { display:block; color:#d94f93; font-size:18px; margin-top:2px; }
+    .forecast { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:10px; }
+    .forecast div {
+      background:#fff7fb; border:1px solid #ffd4e8; border-radius:16px;
+      padding:10px 6px; text-align:center; font-size:12px;
+    }
+    @media (max-width:520px){ .weatherMeta,.forecast { grid-template-columns:1fr; } }
     .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
     .row > * { flex:1; }
     .bar { height:12px; background:#ffe0ef; border-radius:999px; overflow:hidden; margin:10px 0; }
@@ -207,9 +221,14 @@
   <section class="grid three" style="margin-top:16px;">
     <div class="card">
       <div class="title">🌤️ 南京栖霞区 · 明日天气</div>
-      <div class="bigText" id="weather">明天可能有阵雨，记得带伞 ☔</div>
-      <button onclick="pickWeather()">换一条建议</button>
-      <p class="small">这是可爱提醒版；要接入实时天气，可以之后再升级接口。</p>
+      <div class="bigText" id="weather">正在读取实时天气...</div>
+      <div class="weatherMeta" id="weatherMeta"></div>
+      <div class="forecast" id="forecast"></div>
+      <div class="row">
+        <button onclick="fetchWeather()">刷新天气</button>
+        <button class="btn2" onclick="pickWeather()">换一条建议</button>
+      </div>
+      <p class="small" id="weatherUpdated">天气数据来自 Open-Meteo，按南京栖霞区附近坐标估算。</p>
     </div>
 
     <div class="card">
@@ -352,6 +371,16 @@
     '早八预警：前一晚尽量早点睡 😴',
     '出门记得看天，别被南京天气偷袭 🌦️'
   ];
+
+  const weatherCodeMap = {
+    0:'晴朗', 1:'大致晴朗', 2:'局部多云', 3:'阴天',
+    45:'有雾', 48:'雾凇',
+    51:'小毛毛雨', 53:'中等毛毛雨', 55:'大毛毛雨',
+    61:'小雨', 63:'中雨', 65:'大雨',
+    71:'小雪', 73:'中雪', 75:'大雪',
+    80:'小阵雨', 81:'中等阵雨', 82:'强阵雨',
+    95:'雷雨', 96:'雷雨伴小冰雹', 99:'雷雨伴大冰雹'
+  };
 
   const questions = [
     '谁最可能凌晨两点突然开始学习？',
@@ -582,6 +611,61 @@
   }
 
   function addScore(i){ people[i].score = Math.min(100, people[i].score + 1); save(); renderPeople(); }
+  function weatherText(code){
+    return weatherCodeMap[code] || '天气变化中';
+  }
+
+  function weatherAdvice(current, tomorrowRain){
+    if(current.precipitation > 0 || tomorrowRain >= 45) return '有降水可能，出门把伞塞进包里 ☔';
+    if(current.temperature_2m >= 30) return '气温偏高，记得带水和小风扇 🥤';
+    if(current.apparent_temperature <= 12) return '体感偏凉，外套可以安排上 🧥';
+    if(current.wind_speed_10m >= 28) return '风有点大，发型和伞都要稳住 🌬️';
+    return '天气还算友好，适合课后散步和拍班戟照片 🌤️';
+  }
+
+  function renderWeather(data){
+    const current = data.current;
+    const todayCode = weatherText(current.weather_code);
+    const tomorrowRain = data.daily.precipitation_probability_max[1] || 0;
+    document.getElementById('weather').innerText =
+      `现在 ${current.temperature_2m}°C，${todayCode}。${weatherAdvice(current, tomorrowRain)}`;
+
+    document.getElementById('weatherMeta').innerHTML = `
+      <div>体感温度<b>${current.apparent_temperature}°C</b></div>
+      <div>空气湿度<b>${current.relative_humidity_2m}%</b></div>
+      <div>降水量<b>${current.precipitation} mm</b></div>
+      <div>风速<b>${current.wind_speed_10m} km/h</b></div>
+    `;
+
+    document.getElementById('forecast').innerHTML = data.daily.time.map((date,i)=>`
+      <div>
+        <b>${i === 0 ? '今天' : i === 1 ? '明天' : '后天'}</b><br>
+        ${weatherText(data.daily.weather_code[i])}<br>
+        ${data.daily.temperature_2m_min[i]}-${data.daily.temperature_2m_max[i]}°C<br>
+        降水 ${data.daily.precipitation_probability_max[i]}%
+      </div>
+    `).join('');
+
+    document.getElementById('weatherUpdated').innerText =
+      '更新时间：' + current.time.replace('T',' ') + ' · 数据来自 Open-Meteo';
+  }
+
+  async function fetchWeather(){
+    const weatherBox = document.getElementById('weather');
+    weatherBox.innerText = '正在读取实时天气...';
+    try {
+      const url = 'https://api.open-meteo.com/v1/forecast?latitude=32.13&longitude=118.90&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia%2FShanghai&forecast_days=3';
+      const response = await fetch(url);
+      if(!response.ok) throw new Error('weather request failed');
+      renderWeather(await response.json());
+    } catch (error) {
+      weatherBox.innerText = weatherTips[Math.floor(Math.random()*weatherTips.length)];
+      document.getElementById('weatherMeta').innerHTML = '';
+      document.getElementById('forecast').innerHTML = '';
+      document.getElementById('weatherUpdated').innerText = '实时天气暂时没读到，先显示宿舍提醒版。';
+    }
+  }
+
   function pickWeather(){ document.getElementById('weather').innerText = weatherTips[Math.floor(Math.random()*weatherTips.length)]; }
   function pickQuestion(){ document.getElementById('question').innerText = questions[Math.floor(Math.random()*questions.length)]; }
   function pickHero(){ document.getElementById('gamePlan').innerText = '今晚王者身份：' + roles[Math.floor(Math.random()*roles.length)] + ' 🎮'; }
@@ -683,6 +767,7 @@
   renderHoro();
   renderMsg();
   renderMemories();
+  fetchWeather();
   countdown();
   setInterval(countdown,1000);
   initCloud();
