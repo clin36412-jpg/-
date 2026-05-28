@@ -199,6 +199,13 @@
       width:100%; max-height:170px; object-fit:contain; border-radius:22px;
       background:#fff; border:2px solid #ffd4e8; padding:8px;
     }
+    .optionGrid { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
+    .optionBtn { margin:0; border-radius:16px; padding:10px 8px; background:#fff; color:#d94f93; border:1px solid #ffd4e8; box-shadow:none; }
+    .optionBtn.active { background:#ff8fbd; color:#fff; border-color:#ff8fbd; }
+    .checkList { display:grid; gap:8px; }
+    .checkItem { display:flex; justify-content:space-between; gap:8px; align-items:center; background:#fff7fb; border:1px solid #ffd4e8; border-radius:16px; padding:10px; }
+    .voteBar { height:8px; border-radius:999px; background:#ffe0ef; overflow:hidden; margin-top:6px; }
+    .voteBar span { display:block; height:100%; background:#ff8fbd; border-radius:999px; }
     .empty { text-align:center; padding:18px; border-radius:18px; background:#fff7fb; color:#8b7180; }
     .timeline { position:relative; padding-left:12px; }
     .timeline .item { border-left:6px solid #ff8fbd; }
@@ -298,9 +305,14 @@
     </div>
 
     <div class="card">
-      <div class="title">💗 宿舍默契测试</div>
-      <div class="bigText" id="question">谁最可能凌晨两点突然开始学习？</div>
-      <button onclick="pickQuestion()">随机问题</button>
+      <div class="title">🌈 今日心情签到</div>
+      <select id="moodPerson">
+        <option>洪艺嘉</option>
+        <option>牛蕾晴</option>
+        <option>鲍炎岐</option>
+      </select>
+      <div class="optionGrid" id="moodOptions" style="margin-top:10px;"></div>
+      <div class="list" id="moodBoard" style="margin-top:12px;"></div>
     </div>
 
     <div class="card">
@@ -312,28 +324,42 @@
 
   <section class="grid three" id="game" style="margin-top:16px;">
     <div class="card">
-      <div class="title">🎮 王者荣耀专区</div>
+      <div class="title">🎮 王者开黑房间</div>
       <div class="bigText" id="kingZone">今日开黑关键词：别压力队友 ✨</div>
       <div class="row">
         <button onclick="pickKingLuck()">今日王者运势</button>
         <button class="btn2" onclick="pickHeroChallenge()">随机英雄挑战</button>
       </div>
-      <p class="small">宿舍三排永不散场。</p>
+      <div class="checkList" id="gameRoom" style="margin-top:12px;"></div>
+      <p class="small">点一下切换在线状态，今晚谁能上号一眼看清。</p>
     </div>
 
     <div class="card">
       <div class="title">🐾 班戟心情</div>
       <div class="bigText" id="catMood">班戟今天想贴贴 🐈</div>
-      <button onclick="pickCatMood()">看看班戟在想什么</button>
+      <div class="optionGrid" id="catMoodOptions" style="margin-top:12px;"></div>
       <p class="small">乳色小猫永远是宿舍编外成员。</p>
     </div>
 
     <div class="card">
-      <div class="title">🌙 深夜模式语录</div>
-      <div class="bigText" id="nightText">“明天一定早睡。”</div>
-      <button onclick="pickQuote()">随机宿舍语录</button>
-      <p class="small">深夜 11 点后打开最有感觉。</p>
+      <div class="title">🥤 奶茶外卖投票</div>
+      <div class="list" id="foodVotes"></div>
+      <div class="row" style="margin-top:10px;">
+        <input id="voteInput" placeholder="新增选项，比如：麻辣烫、霸王茶姬" onkeydown="if(event.key==='Enter') addVoteOption()" />
+        <button onclick="addVoteOption()">添加</button>
+      </div>
     </div>
+  </section>
+
+  <section class="card" style="margin-top:16px;">
+    <div class="title">🍜 今晚吃什么抽签</div>
+    <div class="bigText" id="dinnerResult">选择困难症交给命运。</div>
+    <div class="row">
+      <input id="dinnerInput" placeholder="加一个候选，比如：烤肉饭、螺蛳粉、麦当劳" onkeydown="if(event.key==='Enter') addDinnerOption()" />
+      <button onclick="addDinnerOption()">加入候选</button>
+      <button class="btn2" onclick="drawDinner()">开始抽签</button>
+    </div>
+    <div class="list" id="dinnerOptions" style="margin-top:12px;"></div>
   </section>
 
   <section class="grid two" id="album" style="margin-top:16px;">
@@ -436,6 +462,21 @@
   ]));
   let photos = JSON.parse(localStorage.getItem('cutePhotos_v4') || '[]');
   let selectedCourseOwner = localStorage.getItem('selectedCourseOwner_v1') || '牛蕾晴';
+  let moods = JSON.parse(localStorage.getItem('cuteMoods_v1') || '{}');
+  let catStatus = localStorage.getItem('cuteCatStatus_v1') || '班戟今天想贴贴 🐾';
+  let gameRoom = JSON.parse(localStorage.getItem('cuteGameRoom_v1') || JSON.stringify({
+    '洪艺嘉': { online:false, role:'中路' },
+    '牛蕾晴': { online:false, role:'发育路' },
+    '鲍炎岐': { online:false, role:'游走' }
+  }));
+  let foodVotes = JSON.parse(localStorage.getItem('cuteFoodVotes_v1') || JSON.stringify([
+    { id:'vote_malatang', name:'麻辣烫', count:0 },
+    { id:'vote_milk_tea', name:'奶茶', count:0 },
+    { id:'vote_rice', name:'烤肉饭', count:0 }
+  ]));
+  let dinnerOptions = JSON.parse(localStorage.getItem('cuteDinnerOptions_v1') || JSON.stringify([
+    '麻辣烫','烤肉饭','黄焖鸡','螺蛳粉','麦当劳','塔斯汀','小火锅','便利店饭团'
+  ]));
 
   const weatherTips = [
     '南京栖霞区明天可能有阵雨，记得带伞 ☔',
@@ -455,14 +496,7 @@
     95:'雷雨', 96:'雷雨伴小冰雹', 99:'雷雨伴大冰雹'
   };
 
-  const questions = [
-    '谁最可能凌晨两点突然开始学习？',
-    '谁打王者最容易上头？',
-    '谁最会安慰人？',
-    '谁最可能考试前一天创造奇迹？',
-    '谁最像班戟的临时主人？',
-    '如果宿舍拍 vlog，谁最有节目效果？'
-  ];
+  const moodChoices = ['开心', '困晕', '焦虑', '想喝奶茶', '想摸班戟', '今天要上分'];
 
   const roles = ['对抗路', '打野', '中路', '发育路', '游走', '今晚负责带飞', '今晚负责可爱'];
   const activities = ['王者三排', '宿舍夜谈', '一起复习', '看电影', '买奶茶', '拍班戟照片', '操场散步'];
@@ -490,15 +524,6 @@
     '班戟今天准备巡逻整个宿舍 🐈',
     '班戟今天想被夸：我是最可爱的小猫！',
     '班戟今天可能会偷偷观察你们复习。'
-  ];
-
-  const quotes = [
-    '“明天一定早睡。”',
-    '“再打一把就睡。”',
-    '“我真的要开始学习了。”',
-    '“这把不是我的问题。”',
-    '“班戟你怎么这么可爱。”',
-    '“考试周是会结束的。”'
   ];
 
   const zodiacProfiles = {
@@ -547,7 +572,7 @@
   }
 
   function stateData(){
-    return { people, messages, memories, photos };
+    return { people, messages, memories, photos, moods, catStatus, gameRoom, foodVotes, dinnerOptions };
   }
 
   function saveLocal(){
@@ -556,6 +581,11 @@
     localStorage.setItem('cuteMemories_v3', JSON.stringify(memories));
     localStorage.setItem('cutePhotos_v4', JSON.stringify(photos));
     localStorage.setItem('selectedCourseOwner_v1', selectedCourseOwner);
+    localStorage.setItem('cuteMoods_v1', JSON.stringify(moods));
+    localStorage.setItem('cuteCatStatus_v1', catStatus);
+    localStorage.setItem('cuteGameRoom_v1', JSON.stringify(gameRoom));
+    localStorage.setItem('cuteFoodVotes_v1', JSON.stringify(foodVotes));
+    localStorage.setItem('cuteDinnerOptions_v1', JSON.stringify(dinnerOptions));
   }
 
   function save(){
@@ -585,8 +615,13 @@
     if(Array.isArray(data.messages)) messages = normalizeMessages(data.messages);
     if(Array.isArray(data.memories)) memories = data.memories;
     if(Array.isArray(data.photos)) photos = data.photos;
+    if(data.moods && typeof data.moods === 'object') moods = data.moods;
+    if(typeof data.catStatus === 'string') catStatus = data.catStatus;
+    if(data.gameRoom && typeof data.gameRoom === 'object') gameRoom = data.gameRoom;
+    if(Array.isArray(data.foodVotes)) foodVotes = data.foodVotes;
+    if(Array.isArray(data.dinnerOptions)) dinnerOptions = data.dinnerOptions;
     saveLocal();
-    renderPeople(); renderHoro(); renderMsg(); renderMemories(); renderPhotos();
+    renderPeople(); renderHoro(); renderMsg(); renderMemories(); renderPhotos(); renderInteractiveBoards();
     applyingRemote = false;
   }
 
@@ -763,6 +798,65 @@
     `).join('') : '<div class="empty">还没有班戟照片，第一张必须隆重登场。</div>';
   }
 
+  function renderMoods(){
+    const person = document.getElementById('moodPerson').value;
+    document.getElementById('moodOptions').innerHTML = moodChoices.map(choice=>`
+      <button class="optionBtn ${moods[person] === choice ? 'active' : ''}" onclick="setMood('${person}','${choice}')">${choice}</button>
+    `).join('');
+    document.getElementById('moodBoard').innerHTML = people.map(p=>`
+      <div class="item"><b>${p.name}</b><br><span class="small">${moods[p.name] || '还没有签到'}</span></div>
+    `).join('');
+  }
+
+  function renderCatStatus(){
+    document.getElementById('catMood').innerText = catStatus;
+    document.getElementById('catMoodOptions').innerHTML = catMoods.map(mood=>`
+      <button class="optionBtn ${catStatus === mood ? 'active' : ''}" onclick="setCatStatus('${mood}')">${mood.replace('班戟今天','')}</button>
+    `).join('');
+  }
+
+  function renderGameRoom(){
+    document.getElementById('gameRoom').innerHTML = people.map(p=>{
+      const state = gameRoom[p.name] || { online:false, role:'待定' };
+      return `
+        <div class="checkItem">
+          <div><b>${p.name}</b><br><span class="small">${state.online ? '在线' : '暂离'} · ${state.role || '待定'}</span></div>
+          <button class="miniBtn" onclick="toggleGameOnline('${p.name}')">${state.online ? '下线' : '上线'}</button>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function renderFoodVotes(){
+    const max = Math.max(1, ...foodVotes.map(v => v.count || 0));
+    document.getElementById('foodVotes').innerHTML = foodVotes.map(v=>`
+      <div class="item">
+        <div class="messageTop">
+          <b>${escapeHtml(v.name)}</b>
+          <button class="miniBtn" onclick="voteFood('${v.id}')">投票 ${v.count || 0}</button>
+        </div>
+        <div class="voteBar"><span style="width:${((v.count || 0) / max) * 100}%"></span></div>
+      </div>
+    `).join('');
+  }
+
+  function renderDinnerOptions(){
+    document.getElementById('dinnerOptions').innerHTML = dinnerOptions.map((option,i)=>`
+      <div class="checkItem">
+        <span>${escapeHtml(option)}</span>
+        <button class="miniBtn" onclick="deleteDinnerOption(${i})">删除</button>
+      </div>
+    `).join('');
+  }
+
+  function renderInteractiveBoards(){
+    renderMoods();
+    renderCatStatus();
+    renderGameRoom();
+    renderFoodVotes();
+    renderDinnerOptions();
+  }
+
   function uploadAvatar(i,file){
     if(!file) return;
     const reader = new FileReader();
@@ -827,14 +921,64 @@
   }
 
   function pickWeather(){ document.getElementById('weather').innerText = weatherTips[Math.floor(Math.random()*weatherTips.length)]; }
-  function pickQuestion(){ document.getElementById('question').innerText = questions[Math.floor(Math.random()*questions.length)]; }
   function pickHero(){ document.getElementById('gamePlan').innerText = '今晚王者身份：' + roles[Math.floor(Math.random()*roles.length)] + ' 🎮'; }
   function pickActivity(){ document.getElementById('gamePlan').innerText = '今晚安排：' + activities[Math.floor(Math.random()*activities.length)] + ' ✨'; }
   function pickLucky(){ const p = people[Math.floor(Math.random()*people.length)]; document.getElementById('lucky').innerText = p.name + ' 今日欧气爆棚！'; }
   function pickKingLuck(){ document.getElementById('kingZone').innerText = kingLuck[Math.floor(Math.random()*kingLuck.length)]; }
   function pickHeroChallenge(){ document.getElementById('kingZone').innerText = '随机英雄挑战：今晚必须玩 ' + heroes[Math.floor(Math.random()*heroes.length)] + '！'; }
-  function pickCatMood(){ document.getElementById('catMood').innerText = catMoods[Math.floor(Math.random()*catMoods.length)]; }
-  function pickQuote(){ document.getElementById('nightText').innerText = quotes[Math.floor(Math.random()*quotes.length)]; }
+
+  function setMood(person, mood){
+    moods[person] = mood;
+    save(); renderMoods();
+  }
+
+  function setCatStatus(status){
+    catStatus = status;
+    save(); renderCatStatus();
+  }
+
+  function toggleGameOnline(name){
+    if(!gameRoom[name]) gameRoom[name] = { online:false, role:'待定' };
+    gameRoom[name].online = !gameRoom[name].online;
+    save(); renderGameRoom();
+  }
+
+  function voteFood(id){
+    const option = foodVotes.find(v => v.id === id);
+    if(!option) return;
+    option.count = (option.count || 0) + 1;
+    save(); renderFoodVotes();
+  }
+
+  function addVoteOption(){
+    const input = document.getElementById('voteInput');
+    if(!input.value.trim()) return;
+    foodVotes.push({ id: makeId('vote'), name: input.value.trim(), count:0 });
+    input.value = '';
+    save(); renderFoodVotes();
+  }
+
+  function addDinnerOption(){
+    const input = document.getElementById('dinnerInput');
+    if(!input.value.trim()) return;
+    dinnerOptions.push(input.value.trim());
+    input.value = '';
+    save(); renderDinnerOptions();
+  }
+
+  function deleteDinnerOption(i){
+    dinnerOptions.splice(i,1);
+    save(); renderDinnerOptions();
+  }
+
+  function drawDinner(){
+    if(!dinnerOptions.length){
+      document.getElementById('dinnerResult').innerText = '候选空空，先加一个想吃的。';
+      return;
+    }
+    const pick = dinnerOptions[Math.floor(Math.random()*dinnerOptions.length)];
+    document.getElementById('dinnerResult').innerText = '今晚就吃：' + pick + '！';
+  }
 
   function addMsg(){
     const input = document.getElementById('msgInput');
@@ -933,7 +1077,12 @@
         if(Array.isArray(data.messages)) messages = normalizeMessages(data.messages);
         if(Array.isArray(data.memories)) memories = data.memories;
         if(Array.isArray(data.photos)) photos = data.photos;
-        save(); renderPeople(); renderHoro(); renderMsg(); renderMemories(); renderPhotos();
+        if(data.moods && typeof data.moods === 'object') moods = data.moods;
+        if(typeof data.catStatus === 'string') catStatus = data.catStatus;
+        if(data.gameRoom && typeof data.gameRoom === 'object') gameRoom = data.gameRoom;
+        if(Array.isArray(data.foodVotes)) foodVotes = data.foodVotes;
+        if(Array.isArray(data.dinnerOptions)) dinnerOptions = data.dinnerOptions;
+        save(); renderPeople(); renderHoro(); renderMsg(); renderMemories(); renderPhotos(); renderInteractiveBoards();
         alert('宿舍数据导入成功！');
       } catch (error) {
         alert('导入失败，请确认是之前导出的 JSON 文件。');
@@ -973,6 +1122,7 @@
   renderMsg();
   renderMemories();
   renderPhotos();
+  renderInteractiveBoards();
   fetchWeather();
   countdown();
   setInterval(countdown,1000);
