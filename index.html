@@ -30,7 +30,7 @@
       background-image:radial-gradient(#ffaad0 2px, transparent 2px);
       background-size:34px 34px;
     }
-    .wrap { max-width:1180px; margin:0 auto; padding:22px 16px 60px; position:relative; }
+    .wrap { max-width:1180px; margin:0 auto; padding:22px 16px 90px; position:relative; }
     header { text-align:center; padding:22px 10px 18px; }
     .pill {
       display:inline-flex; gap:8px; align-items:center; padding:9px 16px;
@@ -125,6 +125,15 @@
     @media (max-width:520px){ .weatherMeta,.forecast { grid-template-columns:1fr; } }
     .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
     .row > * { flex:1; }
+    .tabs {
+      display:flex; gap:8px; padding:6px; border-radius:22px; background:#fff7fb;
+      border:1px solid #ffd4e8; margin-bottom:12px;
+    }
+    .tabBtn {
+      flex:1; margin:0; border-radius:16px; padding:9px 10px;
+      background:transparent; color:#d94f93; box-shadow:none;
+    }
+    .tabBtn.active { background:#ff8fbd; color:#fff; box-shadow:0 8px 18px rgba(255,90,165,.16); }
     .bar { height:12px; background:#ffe0ef; border-radius:999px; overflow:hidden; margin:10px 0; }
     .bar span { display:block; height:100%; background:linear-gradient(90deg,#ff8fbd,#ff5aa5); border-radius:999px; }
     input, select {
@@ -171,11 +180,24 @@
     .count div { background:#fff; border-radius:18px; padding:12px 6px; text-align:center; border:2px solid #ffd4e8; }
     .num { display:block; font-size:28px; font-weight:1000; color:#ff5aa5; }
     .message { background:#fff; border-radius:20px; border:2px solid #ffd4e8; padding:13px; }
+    .message.pinned { border-color:#ffb703; background:#fffaf0; }
     .msgName { font-weight:900; color:#d94f93; margin-bottom:5px; }
     .messageTop { display:flex; justify-content:space-between; gap:8px; align-items:flex-start; }
+    .messageActions { display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
     .miniBtn {
       border-radius:999px; padding:5px 9px; margin:0; box-shadow:none;
       font-size:12px; background:#ffe0ef; color:#d94f93;
+    }
+    .photoGrid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:14px; }
+    .photoCard {
+      background:#fff; border:2px solid #ffd4e8; border-radius:20px;
+      overflow:hidden; position:relative;
+    }
+    .photoCard img { width:100%; aspect-ratio:1/1; object-fit:cover; display:block; }
+    .photoCard .small { padding:8px 10px; margin:0; }
+    .chiikawa {
+      width:100%; max-height:170px; object-fit:contain; border-radius:22px;
+      background:#fff; border:2px solid #ffd4e8; padding:8px;
     }
     .empty { text-align:center; padding:18px; border-radius:18px; background:#fff7fb; color:#8b7180; }
     .timeline { position:relative; padding-left:12px; }
@@ -184,7 +206,27 @@
       border:2px solid #ff8fbd;
       background:linear-gradient(135deg,#fff,#fff2f8);
     }
+    .bottomNav {
+      position:fixed; left:50%; bottom:14px; transform:translateX(-50%);
+      width:min(720px, calc(100% - 24px)); z-index:20;
+      display:grid; grid-template-columns:repeat(5,1fr); gap:6px;
+      padding:8px; border-radius:24px; background:rgba(255,255,255,.92);
+      border:2px solid #ffd4e8; box-shadow:0 14px 36px rgba(255,90,165,.22);
+      backdrop-filter:blur(14px);
+    }
+    .bottomNav a {
+      text-decoration:none; color:#8b7180; text-align:center; font-size:12px;
+      font-weight:900; padding:7px 2px; border-radius:16px;
+    }
+    .bottomNav span { display:block; font-size:18px; line-height:1; margin-bottom:3px; }
+    .bottomNav a:hover { background:#fff0f7; color:#d94f93; }
     footer { text-align:center; margin-top:24px; color:#9a7889; }
+    @media (max-width:900px){
+      .photoGrid { grid-template-columns:repeat(2,1fr); }
+      .card { border-radius:22px; padding:15px; }
+      .course { align-items:flex-start; }
+      .bottomNav { bottom:10px; }
+    }
   </style>
 </head>
 <body>
@@ -198,7 +240,7 @@
 
   <section class="grid three" id="people"></section>
 
-  <section class="grid two" style="margin-top:16px;">
+  <section class="grid two" id="today" style="margin-top:16px;">
     <div class="card">
       <div class="title">⏳ 考试结束倒计时</div>
       <div class="bigText">考到 7 月 3 日，我们一起撑住！</div>
@@ -218,7 +260,7 @@
     </div>
   </section>
 
-  <section class="grid three" style="margin-top:16px;">
+  <section class="grid three" id="life" style="margin-top:16px;">
     <div class="card">
       <div class="title">🌤️ 南京栖霞区 · 明日天气</div>
       <div class="bigText" id="weather">正在读取实时天气...</div>
@@ -233,8 +275,9 @@
 
     <div class="card">
       <div class="title">📚 课程速览</div>
+      <div class="tabs" id="courseTabs"></div>
       <div class="list" id="courses"></div>
-      <p class="small">先不放期末具体科目，只保留日常课表速览。</p>
+      <p class="small">可切换查看牛蕾晴和洪艺嘉的日常课表；今日课程会自动高亮。</p>
     </div>
 
     <div class="card">
@@ -247,11 +290,11 @@
     </div>
   </section>
 
-  <section class="grid three" style="margin-top:16px;">
+  <section class="grid three" id="fun" style="margin-top:16px;">
     <div class="card">
       <div class="title">🔮 本周星座运势</div>
       <div class="list" id="horoscope"></div>
-      <p class="small">当前是宿舍娱乐版；以后可以改成读取在线 JSON，每周手动或自动更新。</p>
+      <p class="small">按生日匹配星座档案，并用日期生成每日幸运提示。</p>
     </div>
 
     <div class="card">
@@ -267,7 +310,7 @@
     </div>
   </section>
 
-  <section class="grid three" style="margin-top:16px;">
+  <section class="grid three" id="game" style="margin-top:16px;">
     <div class="card">
       <div class="title">🎮 王者荣耀专区</div>
       <div class="bigText" id="kingZone">今日开黑关键词：别压力队友 ✨</div>
@@ -293,7 +336,27 @@
     </div>
   </section>
 
-  <section class="card" style="margin-top:16px;">
+  <section class="grid two" id="album" style="margin-top:16px;">
+    <div class="card">
+      <div class="title">📸 班戟照片墙</div>
+      <div class="row">
+        <input id="photoCaption" placeholder="照片说明，比如：班戟今日营业" />
+        <label class="upload">上传照片
+          <input type="file" accept="image/*" onchange="uploadPhoto(this.files[0]); this.value=''">
+        </label>
+      </div>
+      <div class="photoGrid" id="photoWall"></div>
+      <p class="small">照片会同步到云端。图片太大会影响加载，建议选几张最可爱的。</p>
+    </div>
+
+    <div class="card">
+      <div class="title">🍓 Chiikawa 小角落</div>
+      <img class="chiikawa" src="assets/chiikawa-friends.jpg" alt="Chiikawa friends">
+      <div class="bigText" style="margin-top:12px;">宿舍今日守护：一起“嗯嗯”点头，然后继续可爱。</div>
+    </div>
+  </section>
+
+  <section class="card" id="memories" style="margin-top:16px;">
     <div class="title">📸 宿舍回忆时间线</div>
     <div class="row">
       <input id="memoryInput" placeholder="新增一条回忆，比如：一起拍了班戟的绝美照片" onkeydown="if(event.key==='Enter') addMemory()" />
@@ -302,7 +365,7 @@
     <div class="list timeline" id="timeline" style="margin-top:14px;"></div>
   </section>
 
-  <section class="card" style="margin-top:16px;">
+  <section class="card" id="messagesSection" style="margin-top:16px;">
     <div class="title">💌 宿舍留言墙</div>
     <div class="row">
       <select id="author">
@@ -335,6 +398,14 @@
   <footer>Made for 洪艺嘉 · 牛蕾晴 · 鲍炎岐 · 班戟 🎀</footer>
 </div>
 
+<nav class="bottomNav" aria-label="手机快捷导航">
+  <a href="#today"><span>⏳</span>今日</a>
+  <a href="#life"><span>📚</span>课表</a>
+  <a href="#game"><span>🎮</span>开黑</a>
+  <a href="#album"><span>🐾</span>照片</a>
+  <a href="#messagesSection"><span>💌</span>留言</a>
+</nav>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
   const SUPABASE_URL = 'https://zpfduanawekurjzqulgu.supabase.co';
@@ -363,6 +434,8 @@
     '📚 一起熬过考试周，撑到 7 月 3 日',
     '🌃 深夜夜谈、散步、奶茶和突然的爆笑'
   ]));
+  let photos = JSON.parse(localStorage.getItem('cutePhotos_v4') || '[]');
+  let selectedCourseOwner = localStorage.getItem('selectedCourseOwner_v1') || '牛蕾晴';
 
   const weatherTips = [
     '南京栖霞区明天可能有阵雨，记得带伞 ☔',
@@ -393,7 +466,16 @@
 
   const roles = ['对抗路', '打野', '中路', '发育路', '游走', '今晚负责带飞', '今晚负责可爱'];
   const activities = ['王者三排', '宿舍夜谈', '一起复习', '看电影', '买奶茶', '拍班戟照片', '操场散步'];
-  const heroes = ['瑶', '蔡文姬', '小乔', '貂蝉', '孙尚香', '李白', '韩信', '王昭君', '鲁班七号', '大乔', '庄周', '妲己'];
+  const heroes = [
+    '瑶','蔡文姬','小乔','貂蝉','孙尚香','李白','韩信','王昭君','鲁班七号','大乔','庄周','妲己',
+    '安琪拉','甄姬','西施','上官婉儿','不知火舞','海月','弈星','沈梦溪','干将莫邪','周瑜','诸葛亮',
+    '貂蝉','露娜','镜','澜','曜','暃','娜可露露','阿轲','兰陵王','云中君','赵云','橘右京','宫本武藏',
+    '韩信','裴擒虎','百里玄策','孙悟空','铠','亚瑟','吕布','花木兰','马超','关羽','夏洛特','狂铁',
+    '孙策','达摩','老夫子','司空震','李信','姬小满','元歌','程咬金','白起','廉颇','项羽','夏侯惇',
+    '后羿','鲁班七号','狄仁杰','虞姬','公孙离','马可波罗','百里守约','伽罗','黄忠','蒙犽','莱西奥',
+    '孙尚香','艾琳','戈娅','太乙真人','张飞','牛魔','东皇太一','盾山','鬼谷子','明世隐','孙膑',
+    '庄周','刘禅','鲁班大师','桑启','朵莉亚','少司缘','张良','姜子牙','墨子','武则天'
+  ];
   const kingLuck = [
     '今日适合三排，上分靠配合，不靠嘴硬。',
     '今日容易连胜，但别在第三局开始飘。',
@@ -419,26 +501,43 @@
     '“考试周是会结束的。”'
   ];
 
-  const fortunes = {
-    '摩羯座': '本周关键词：稳住。适合复习、整理计划，也适合默默变强。',
-    '水瓶座': '本周关键词：灵感。打王者可能会有奇怪但有效的新打法。',
-    '狮子座': '本周关键词：高光。适合展示自己，也适合成为宿舍气氛担当。'
+  const zodiacProfiles = {
+    '摩羯座': { range:'12.22-1.19', key:'稳住', text:'适合复习、整理计划，也适合默默变强。' },
+    '水瓶座': { range:'1.20-2.18', key:'灵感', text:'容易冒出新点子，适合做网页、改排版、试新套路。' },
+    '狮子座': { range:'7.23-8.22', key:'高光', text:'适合展示自己，也适合成为宿舍气氛担当。' }
   };
 
-  const courses = [
-    {day:'周一', name:'数据结构', time:'10:10-12:00 / 14:00-15:50', place:'仙II-203'},
-    {day:'周一', name:'习近平新时代中国特色社会主义思想概论', time:'18:30-20:20', place:'逸A-322'},
-    {day:'周二', name:'数据科学与数据分析', time:'08:00-08:50 / 18:30-20:20', place:'仙II-303 / 基础实验楼'},
-    {day:'周二', name:'离散数学', time:'10:10-12:00', place:'仙II-115'},
-    {day:'周二', name:'啦啦操', time:'14:00-15:50', place:'方肇周健美…'},
-    {day:'周二', name:'中国绘画史', time:'16:10-18:00', place:'仙II-101'},
-    {day:'周三', name:'管理信息系统', time:'08:00-08:50 / 10:10-12:00', place:'仙II-303 / 基础实验楼'},
-    {day:'周四', name:'人工智能与网络信息治理', time:'08:00-09:50', place:'仙II-315'},
-    {day:'周四', name:'人机交互', time:'10:10-12:00', place:'仙II-203'},
-    {day:'周四', name:'信息分析', time:'14:00-17:00', place:'仙II-308'},
-    {day:'周四', name:'毛泽东思想和中国特色社会主义理论体系概论', time:'18:30-20:20', place:'逸B-212'},
-    {day:'周五', name:'数据科学与数据分析', time:'09:00-12:00', place:'仙II-303'}
-  ];
+  const courseBooks = {
+    '牛蕾晴': [
+      {day:'周一', name:'数据结构', time:'10:10-12:00 / 14:00-15:50', place:'仙II-203'},
+      {day:'周一', name:'习近平新时代中国特色社会主义思想概论', time:'18:30-20:20', place:'逸A-322'},
+      {day:'周二', name:'数据科学与数据分析', time:'08:00-08:50 / 18:30-20:20', place:'仙II-303 / 基础实验楼'},
+      {day:'周二', name:'离散数学', time:'10:10-12:00', place:'仙II-115'},
+      {day:'周二', name:'啦啦操', time:'14:00-15:50', place:'方肇周健美'},
+      {day:'周二', name:'中国绘画史', time:'16:10-18:00', place:'仙II-101'},
+      {day:'周三', name:'管理信息系统', time:'08:00-08:50 / 10:10-12:00', place:'仙II-303 / 基础实验楼'},
+      {day:'周四', name:'人工智能与网络信息治理', time:'08:00-09:50', place:'仙II-315'},
+      {day:'周四', name:'人机交互', time:'10:10-12:00', place:'仙II-203'},
+      {day:'周四', name:'信息分析', time:'14:00-17:00', place:'仙II-308'},
+      {day:'周四', name:'毛泽东思想和中国特色社会主义理论体系概论', time:'18:30-20:20', place:'逸B-212'},
+      {day:'周五', name:'数据科学与数据分析', time:'09:00-12:00', place:'仙II-303'}
+    ],
+    '洪艺嘉': [
+      {day:'周一', name:'数据结构', time:'10:10-12:00 / 14:00-15:50', place:'仙I-203'},
+      {day:'周一', name:'习近平新时代中国特色社会主义思想概论', time:'18:30-20:20', place:'逸A-322'},
+      {day:'周二', name:'数据科学与数据分析', time:'08:00-09:50 / 18:30-20:20', place:'仙II-303 / 基础实验楼'},
+      {day:'周二', name:'离散数学', time:'10:10-12:00', place:'仙I-115'},
+      {day:'周二', name:'啦啦操', time:'14:00-15:50', place:'方肇周健美'},
+      {day:'周三', name:'管理信息系统', time:'08:00-09:50 / 10:10-12:00', place:'仙II-303 / 基础实验楼'},
+      {day:'周三', name:'信息检索', time:'14:00-15:50 / 18:30-20:20', place:'仙I-113 / 基础实验楼'},
+      {day:'周四', name:'人工智能与网络信息治理', time:'08:00-09:50', place:'仙I'},
+      {day:'周四', name:'人机交互', time:'10:10-12:00', place:'仙I-203'},
+      {day:'周四', name:'信息分析', time:'14:00-17:00', place:'仙I-308'},
+      {day:'周四', name:'毛泽东思想和中国特色社会主义理论体系概论', time:'18:30-20:20', place:'逸B-212'},
+      {day:'周五', name:'数据科学与数据分析', time:'09:00-12:00', place:'仙II-303'},
+      {day:'周五', name:'信息组织', time:'14:00-18:00', place:'教222 / 南园综合楼'}
+    ]
+  };
 
   function setCloudStatus(text, mode){
     const status = document.getElementById('cloudStatus');
@@ -448,13 +547,15 @@
   }
 
   function stateData(){
-    return { people, messages, memories };
+    return { people, messages, memories, photos };
   }
 
   function saveLocal(){
     localStorage.setItem('cutePeople_v2', JSON.stringify(people));
     localStorage.setItem('cuteMessages_v2', JSON.stringify(messages));
     localStorage.setItem('cuteMemories_v3', JSON.stringify(memories));
+    localStorage.setItem('cutePhotos_v4', JSON.stringify(photos));
+    localStorage.setItem('selectedCourseOwner_v1', selectedCourseOwner);
   }
 
   function save(){
@@ -481,10 +582,11 @@
     if(!data) return;
     applyingRemote = true;
     if(Array.isArray(data.people)) people = data.people;
-    if(Array.isArray(data.messages)) messages = data.messages;
+    if(Array.isArray(data.messages)) messages = normalizeMessages(data.messages);
     if(Array.isArray(data.memories)) memories = data.memories;
+    if(Array.isArray(data.photos)) photos = data.photos;
     saveLocal();
-    renderPeople(); renderHoro(); renderMsg(); renderMemories();
+    renderPeople(); renderHoro(); renderMsg(); renderMemories(); renderPhotos();
     applyingRemote = false;
   }
 
@@ -544,6 +646,23 @@
     return ['周日','周一','周二','周三','周四','周五','周六'][new Date().getDay()];
   }
 
+  function makeId(prefix){
+    return prefix + '_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,8);
+  }
+
+  function normalizeMessages(list){
+    return list.map((message, index) => ({
+      id: message.id || makeId('msg' + index),
+      author: message.author || '匿名',
+      text: message.text || '',
+      likes: Number(message.likes || 0),
+      pinned: Boolean(message.pinned),
+      createdAt: message.createdAt || new Date().toISOString()
+    }));
+  }
+
+  messages = normalizeMessages(messages);
+
   function renderPeople(){
     document.getElementById('people').innerHTML = people.map((p,i)=>`
       <div class="card roommate">
@@ -560,8 +679,22 @@
     `).join('');
   }
 
+  function renderCourseTabs(){
+    document.getElementById('courseTabs').innerHTML = Object.keys(courseBooks).map(owner=>`
+      <button class="tabBtn ${owner === selectedCourseOwner ? 'active' : ''}" onclick="selectCourseOwner('${owner}')">${owner}</button>
+    `).join('');
+  }
+
+  function selectCourseOwner(owner){
+    selectedCourseOwner = owner;
+    saveLocal();
+    renderCourseTabs();
+    renderCourses();
+  }
+
   function renderCourses(){
     const today = weekdayName();
+    const courses = courseBooks[selectedCourseOwner] || [];
     const todayCourses = courses.filter(c => c.day === today);
     document.getElementById('courses').innerHTML = courses.map(c=>`
       <div class="item course ${c.day === today ? 'todayCourse' : ''}">
@@ -570,24 +703,41 @@
       </div>
     `).join('') + `
       <div class="item todayCourse">
-        <b>今日提醒｜${today}</b><br>
+        <b>${selectedCourseOwner} 今日提醒｜${today}</b><br>
         <span class="small">${todayCourses.length ? todayCourses.map(c => c.name).join('、') : '今天课表空空，可以安排复习或快乐。'}</span>
       </div>
     `;
   }
 
+  function dailyPick(options, salt){
+    const seed = new Date().toISOString().slice(0,10) + salt;
+    let hash = 0;
+    for(let i=0; i<seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+    return options[hash % options.length];
+  }
+
   function renderHoro(){
     document.getElementById('horoscope').innerHTML = people.map(p=>`
-      <div class="item"><b>${p.name}｜${p.sign}</b><br><span class="small">${fortunes[p.sign]}</span></div>
+      <div class="item">
+        <b>${p.name}｜${p.sign}</b>
+        <span class="badge">${zodiacProfiles[p.sign]?.range || '生日已记录'}</span><br>
+        <span class="small">关键词：${zodiacProfiles[p.sign]?.key || '闪闪发光'}。${zodiacProfiles[p.sign]?.text || '今天也适合做自己。'}</span><br>
+        <span class="small">今日幸运：${dailyPick(['奶茶','早睡','复习顺利','王者连胜','拍照出片','班戟贴贴','不被点名'], p.name)}</span>
+      </div>
     `).join('');
   }
 
   function renderMsg(){
-    document.getElementById('messages').innerHTML = messages.length ? messages.map((m,i)=>`
-      <div class="message">
+    const sorted = [...messages].sort((a,b) => Number(b.pinned) - Number(a.pinned));
+    document.getElementById('messages').innerHTML = sorted.length ? sorted.map((m)=>`
+      <div class="message ${m.pinned ? 'pinned' : ''}">
         <div class="messageTop">
-          <div class="msgName">${escapeHtml(m.author)}</div>
-          <button class="miniBtn" onclick="deleteMsg(${i})">删除</button>
+          <div class="msgName">${m.pinned ? '📌 ' : ''}${escapeHtml(m.author)}</div>
+          <div class="messageActions">
+            <button class="miniBtn" onclick="likeMsg('${m.id}')">♡ ${m.likes || 0}</button>
+            <button class="miniBtn" onclick="togglePinMsg('${m.id}')">${m.pinned ? '取消置顶' : '置顶'}</button>
+            <button class="miniBtn" onclick="deleteMsg('${m.id}')">删除</button>
+          </div>
         </div>
         <div>${escapeHtml(m.text)}</div>
       </div>
@@ -601,6 +751,16 @@
         <button class="miniBtn" onclick="deleteMemory(${i})">删除</button>
       </div>
     `).join('');
+  }
+
+  function renderPhotos(){
+    document.getElementById('photoWall').innerHTML = photos.length ? photos.map(photo=>`
+      <div class="photoCard">
+        <img src="${photo.image}" alt="${escapeHtml(photo.caption || '班戟照片')}">
+        <p class="small">${escapeHtml(photo.caption || '班戟的可爱瞬间')}</p>
+        <button class="miniBtn" onclick="deletePhoto('${photo.id}')">删除</button>
+      </div>
+    `).join('') : '<div class="empty">还没有班戟照片，第一张必须隆重登场。</div>';
   }
 
   function uploadAvatar(i,file){
@@ -680,13 +840,34 @@
     const input = document.getElementById('msgInput');
     const author = document.getElementById('author').value;
     if(!input.value.trim()) return;
-    messages.unshift({author, text: input.value.trim()});
+    messages.unshift({
+      id: makeId('msg'),
+      author,
+      text: input.value.trim(),
+      likes: 0,
+      pinned: false,
+      createdAt: new Date().toISOString()
+    });
     input.value='';
     save(); renderMsg();
   }
 
-  function deleteMsg(i){
-    messages.splice(i,1);
+  function likeMsg(id){
+    const message = messages.find(m => m.id === id);
+    if(!message) return;
+    message.likes = (message.likes || 0) + 1;
+    save(); renderMsg();
+  }
+
+  function togglePinMsg(id){
+    const message = messages.find(m => m.id === id);
+    if(!message) return;
+    message.pinned = !message.pinned;
+    save(); renderMsg();
+  }
+
+  function deleteMsg(id){
+    messages = messages.filter(m => m.id !== id);
     save(); renderMsg();
   }
 
@@ -709,8 +890,30 @@
     save(); renderMemories();
   }
 
+  function uploadPhoto(file){
+    if(!file) return;
+    const captionInput = document.getElementById('photoCaption');
+    const reader = new FileReader();
+    reader.onload = () => {
+      photos.unshift({
+        id: makeId('photo'),
+        image: reader.result,
+        caption: captionInput.value.trim() || '班戟的可爱瞬间',
+        createdAt: new Date().toISOString()
+      });
+      captionInput.value = '';
+      save(); renderPhotos();
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function deletePhoto(id){
+    photos = photos.filter(photo => photo.id !== id);
+    save(); renderPhotos();
+  }
+
   function exportData(){
-    const data = { people, messages, memories, exportedAt: new Date().toISOString() };
+    const data = { people, messages, memories, photos, exportedAt: new Date().toISOString() };
     const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -727,9 +930,10 @@
       try {
         const data = JSON.parse(reader.result);
         if(Array.isArray(data.people)) people = data.people;
-        if(Array.isArray(data.messages)) messages = data.messages;
+        if(Array.isArray(data.messages)) messages = normalizeMessages(data.messages);
         if(Array.isArray(data.memories)) memories = data.memories;
-        save(); renderPeople(); renderHoro(); renderMsg(); renderMemories();
+        if(Array.isArray(data.photos)) photos = data.photos;
+        save(); renderPeople(); renderHoro(); renderMsg(); renderMemories(); renderPhotos();
         alert('宿舍数据导入成功！');
       } catch (error) {
         alert('导入失败，请确认是之前导出的 JSON 文件。');
@@ -763,10 +967,12 @@
   }
 
   renderPeople();
+  renderCourseTabs();
   renderCourses();
   renderHoro();
   renderMsg();
   renderMemories();
+  renderPhotos();
   fetchWeather();
   countdown();
   setInterval(countdown,1000);
