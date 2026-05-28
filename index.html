@@ -129,6 +129,14 @@
       background:#ffe0ef; color:#d94f93; font-weight:900; font-size:12px;
       white-space:nowrap;
     }
+    .status {
+      display:inline-flex; align-items:center; gap:6px; padding:8px 12px;
+      border-radius:999px; background:#fff7fb; border:1px solid #ffd4e8;
+      color:#8b7180; font-weight:900; font-size:13px;
+    }
+    .dot { width:9px; height:9px; border-radius:50%; background:#c8b5c0; display:inline-block; }
+    .dot.online { background:#35c759; box-shadow:0 0 0 4px rgba(53,199,89,.14); }
+    .dot.error { background:#f05252; box-shadow:0 0 0 4px rgba(240,82,82,.14); }
     .cat {
       width:140px; height:110px; margin:0 auto 10px;
       border-radius:50% 50% 45% 45%;
@@ -300,14 +308,25 @@
 
   <section class="card" style="margin-top:16px;">
     <div class="title">🔗 分享和 GitHub 协作</div>
-    <p class="small">这个网页可以直接发 HTML 文件，也可以放到 GitHub Pages 生成固定网址。三个人想一起改网页内容，就在同一个 GitHub 仓库里提交修改；网页里的留言默认仍保存在各自浏览器。</p>
+    <p class="small">这个网页可以直接发 HTML 文件，也可以放到 GitHub Pages 生成固定网址。没接云端时数据保存在各自浏览器；接上 Supabase 后，三个人会共享同一份留言、回忆、头像和快乐指数。</p>
+    <div class="status" id="cloudStatus"><span class="dot"></span>本地模式：还没有连接云端同步</div>
     <button onclick="copyTip()">复制分享文案</button>
   </section>
 
   <footer>Made for 洪艺嘉 · 牛蕾晴 · 鲍炎岐 · 班戟 🎀</footer>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+  const SUPABASE_URL = '';
+  const SUPABASE_PUBLISHABLE_KEY = '';
+  const CLOUD_ROW_ID = 'main';
+
+  let cloud = null;
+  let cloudReady = false;
+  let applyingRemote = false;
+  let cloudSaveTimer = null;
+
   const peopleDefault = [
     { name:'洪艺嘉', birthday:'8.8', sign:'狮子座', avatar:'🦁', score:92 },
     { name:'牛蕾晴', birthday:'12.28', sign:'摩羯座', avatar:'🐐', score:95 },
@@ -392,10 +411,98 @@
     {day:'周五', name:'数据科学与数据分析', time:'09:00-12:00', place:'仙II-303'}
   ];
 
-  function save(){
+  function setCloudStatus(text, mode){
+    const status = document.getElementById('cloudStatus');
+    const dot = status.querySelector('.dot');
+    status.lastChild.textContent = text;
+    dot.className = 'dot' + (mode ? ' ' + mode : '');
+  }
+
+  function stateData(){
+    return { people, messages, memories };
+  }
+
+  function saveLocal(){
     localStorage.setItem('cutePeople_v2', JSON.stringify(people));
     localStorage.setItem('cuteMessages_v2', JSON.stringify(messages));
     localStorage.setItem('cuteMemories_v3', JSON.stringify(memories));
+  }
+
+  function save(){
+    saveLocal();
+    if(cloudReady && !applyingRemote) scheduleCloudSave();
+  }
+
+  function scheduleCloudSave(){
+    clearTimeout(cloudSaveTimer);
+    cloudSaveTimer = setTimeout(saveCloudState, 450);
+  }
+
+  async function saveCloudState(){
+    if(!cloudReady || !cloud) return;
+    const { error } = await cloud.from('dorm_state').upsert({
+      id: CLOUD_ROW_ID,
+      data: stateData(),
+      updated_at: new Date().toISOString()
+    });
+    if(error) setCloudStatus('云端保存失败，当前改动已保存在本机', 'error');
+  }
+
+  function applyRemoteState(data){
+    if(!data) return;
+    applyingRemote = true;
+    if(Array.isArray(data.people)) people = data.people;
+    if(Array.isArray(data.messages)) messages = data.messages;
+    if(Array.isArray(data.memories)) memories = data.memories;
+    saveLocal();
+    renderPeople(); renderHoro(); renderMsg(); renderMemories();
+    applyingRemote = false;
+  }
+
+  async function initCloud(){
+    if(!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY){
+      setCloudStatus('本地模式：还没有连接云端同步', '');
+      return;
+    }
+    if(!window.supabase){
+      setCloudStatus('云端同步脚本加载失败，请检查网络', 'error');
+      return;
+    }
+
+    cloud = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+    setCloudStatus('正在连接云端同步...', '');
+
+    const { data, error } = await cloud
+      .from('dorm_state')
+      .select('data')
+      .eq('id', CLOUD_ROW_ID)
+      .maybeSingle();
+
+    if(error){
+      setCloudStatus('云端读取失败，请检查 Supabase 配置', 'error');
+      return;
+    }
+
+    cloudReady = true;
+    if(data && data.data){
+      applyRemoteState(data.data);
+    } else {
+      await saveCloudState();
+    }
+
+    cloud
+      .channel('dorm-state-sync')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'dorm_state',
+        filter: `id=eq.${CLOUD_ROW_ID}`
+      }, payload => {
+        if(payload.new && payload.new.data) applyRemoteState(payload.new.data);
+      })
+      .subscribe(status => {
+        if(status === 'SUBSCRIBED') setCloudStatus('云端同步已开启：三个人会看到同一份数据', 'online');
+      });
   }
 
   function escapeHtml(value){
@@ -578,6 +685,7 @@
   renderMemories();
   countdown();
   setInterval(countdown,1000);
+  initCloud();
 </script>
 </body>
 </html>
