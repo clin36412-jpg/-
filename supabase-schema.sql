@@ -26,3 +26,9 @@ insert into public.dorm_state (id, data)
 values ('main', '{}')
 on conflict (id) do nothing;
 
+do $$
+begin
+  alter publication supabase_realtime add table public.dorm_state;
+exception
+  when duplicate_object then null;
+end $$;
