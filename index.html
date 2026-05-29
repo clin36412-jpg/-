@@ -154,6 +154,15 @@
     .storyBox a { color:#d94f93; text-decoration:none; font-weight:1000; }
     .storyBox a:hover { text-decoration:underline; }
     .storyBox span { display:block; font-size:13px; color:#8b7180; margin-top:10px; font-weight:700; }
+    .quickGrid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+    .quickLink {
+      display:block; text-decoration:none; color:#7a365d; font-weight:900;
+      background:#fff; border:1px solid #ffd4e8; border-radius:18px;
+      padding:12px; min-height:72px;
+    }
+    .quickLink b { display:block; color:#d94f93; margin-bottom:4px; }
+    .quickLink:hover { transform:translateY(-2px); box-shadow:0 10px 18px rgba(255,90,165,.12); }
+    .commentList { display:grid; gap:8px; max-height:260px; overflow:auto; padding-right:4px; }
     .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
     .row > * { flex:1; }
     .tabs {
@@ -285,6 +294,7 @@
     footer { text-align:center; margin-top:24px; color:#9a7889; }
     @media (max-width:900px){
       .photoGrid { grid-template-columns:repeat(2,1fr); }
+      .quickGrid { grid-template-columns:1fr; }
       .todayPanel { grid-template-columns:1fr; }
       .courseControls,.courseSummary { grid-template-columns:1fr; }
       .card { border-radius:22px; padding:15px; }
@@ -439,6 +449,11 @@
       <div class="title">🎭 今日宿舍小剧场</div>
       <div class="bigText storyBox" id="miniTheater">正在排练今日剧情...</div>
       <button onclick="pickMiniTheater()">换一幕</button>
+      <div class="row editOnly" style="margin-top:10px;">
+        <input id="theaterInput" placeholder="投稿一个小剧场梗，比如：{a} 今天突然宣布..." onkeydown="if(event.key==='Enter') addTheaterSubmission()" />
+        <button onclick="addTheaterSubmission()">投稿</button>
+      </div>
+      <div class="commentList" id="theaterSubmissions" style="margin-top:10px;"></div>
     </div>
 
     <div class="card">
@@ -455,6 +470,31 @@
       <div class="rankList" id="hotTrends"><div class="empty">正在读取百度热搜...</div></div>
       <button onclick="fetchHotTrends()">刷新热搜</button>
       <p class="small" id="hotUpdated">真实数据来自 60s API 的百度热榜。</p>
+    </div>
+  </section>
+
+  <section class="grid two" id="portal" style="margin-top:16px;">
+    <div class="card">
+      <div class="title">🗯️ 热搜吐槽区</div>
+      <div class="row">
+        <select id="hotCommentTopic"></select>
+        <input id="hotCommentInput" placeholder="对这条热搜吐槽一句" onkeydown="if(event.key==='Enter') addHotComment()" />
+        <button onclick="addHotComment()">发送</button>
+      </div>
+      <div class="commentList" id="hotComments" style="margin-top:12px;"></div>
+    </div>
+
+    <div class="card">
+      <div class="title">🧭 外界入口</div>
+      <div class="quickGrid" id="externalLinks"></div>
+      <div class="row" style="margin-top:12px;">
+        <input id="memeKeyword" placeholder="表情包关键词，比如 chiikawa 发疯" />
+        <button onclick="searchMeme()">搜表情包</button>
+      </div>
+      <div class="row" style="margin-top:8px;">
+        <input id="placeKeyword" placeholder="周末去哪儿，比如 南京 展览 / 新街口 火锅" />
+        <button class="btn2" onclick="searchPlace()">搜周末</button>
+      </div>
     </div>
   </section>
 
@@ -729,6 +769,8 @@
   const activities = ['王者三排', '宿舍夜谈', '一起复习', '看电影', '买奶茶', '拍班戟照片', '操场散步'];
   let hotTrends = [];
   let musicChart = [];
+  let theaterSubmissions = JSON.parse(localStorage.getItem('lalaTheaterSubmissions_v1') || '[]');
+  let hotComments = JSON.parse(localStorage.getItem('lalaHotComments_v1') || '[]');
   const hotTrendSources = [
     { name:'百度热榜', url:'https://60s.viki.moe/v2/baidu' },
     { name:'B站热搜', url:'https://60s.viki.moe/v2/bili' },
@@ -755,6 +797,14 @@
     '{a} 说今晚必须有 BGM，于是 {b} 随机播放一首歌，{c} 听到副歌立刻进入走秀状态，班戟表示这段可以加精。',
     '宿舍突然收到一封来自未来的信：{a} 会点到最好吃的晚饭，{b} 会在王者里打出高光，{c} 会负责把这件事讲得像连续剧。',
     '{a} 今天是勇者，{b} 是军师，{c} 是负责吐槽的旁白。三个人的任务是：在不纠结超过三分钟的情况下决定今晚吃什么。'
+  ];
+  const externalLinks = [
+    { title:'南大办事大厅', desc:'网上办事服务大厅', url:'https://ehall.nju.edu.cn' },
+    { title:'南京大学官网', desc:'学校通知入口', url:'https://www.nju.edu.cn' },
+    { title:'课程资料搜索', desc:'B站搜复习资料', url:'https://search.bilibili.com/all?keyword=%E5%8D%97%E4%BA%AC%E5%A4%A7%E5%AD%A6%20%E6%9C%9F%E6%9C%AB%20%E5%A4%8D%E4%B9%A0' },
+    { title:'周末去哪儿', desc:'小红书搜南京周末', url:'https://www.xiaohongshu.com/search_result?keyword=%E5%8D%97%E4%BA%AC%20%E5%91%A8%E6%9C%AB%20%E5%8E%BB%E5%93%AA%E5%84%BF' },
+    { title:'南京展览', desc:'高德搜附近展览', url:'https://www.amap.com/search?query=%E5%8D%97%E4%BA%AC%20%E5%B1%95%E8%A7%88' },
+    { title:'今日表情包', desc:'搜 chiikawa 表情包', url:'https://image.baidu.com/search/index?tn=baiduimage&word=chiikawa%20%E8%A1%A8%E6%83%85%E5%8C%85' }
   ];
   const bgmMoods = ['适合走路时假装在电影里', '适合写作业但心已经飞走', '适合洗澡大合唱', '适合出门买饭', '适合三个人一起发疯', '适合安静看班戟'];
   const heroMissions = ['只准温柔交流', '第一局不许怪队友', '赢了截图，输了装作没发生', '谁先红温谁请奶茶', '打完必须夸一句队友', '输赢都要快乐收场'];
@@ -844,7 +894,7 @@
   }
 
   function stateData(){
-    return { people, profiles, messages, memories, photos, moods, moodHistory, catStatus, catDiary, catCare, gameRoom, foodVotes, dinnerOptions, lastDinner, fishLeaderboard };
+    return { people, profiles, messages, memories, photos, moods, moodHistory, catStatus, catDiary, catCare, gameRoom, foodVotes, dinnerOptions, lastDinner, fishLeaderboard, theaterSubmissions, hotComments };
   }
 
   function saveLocal(){
@@ -867,6 +917,8 @@
     localStorage.setItem('cuteFoodVotes_v1', JSON.stringify(foodVotes));
     localStorage.setItem('cuteDinnerOptions_v1', JSON.stringify(dinnerOptions));
     localStorage.setItem('lalaLastDinner_v1', lastDinner);
+    localStorage.setItem('lalaTheaterSubmissions_v1', JSON.stringify(theaterSubmissions));
+    localStorage.setItem('lalaHotComments_v1', JSON.stringify(hotComments));
   }
 
   function save(){
@@ -907,6 +959,8 @@
     if(Array.isArray(data.dinnerOptions)) dinnerOptions = [...new Set([...data.dinnerOptions, ...defaultDinnerOptions])].slice(0, 30);
     if(typeof data.lastDinner === 'string') lastDinner = data.lastDinner;
     if(Array.isArray(data.fishLeaderboard)) fishLeaderboard = data.fishLeaderboard;
+    if(Array.isArray(data.theaterSubmissions)) theaterSubmissions = data.theaterSubmissions;
+    if(Array.isArray(data.hotComments)) hotComments = data.hotComments;
     saveLocal();
     renderIdentity(); renderPeople(); renderProfiles(); renderHoro(); renderMsg(); renderMemories(); renderPhotos(); renderInteractiveBoards(); renderTodayPanel();
     applyingRemote = false;
@@ -1181,6 +1235,16 @@
     return options[Math.floor(Math.random() * options.length)];
   }
 
+  function searchUrl(site, keyword){
+    const encoded = encodeURIComponent(keyword);
+    if(site === 'baidu') return `https://www.baidu.com/s?wd=${encoded}`;
+    if(site === 'bili') return `https://search.bilibili.com/all?keyword=${encoded}`;
+    if(site === 'weibo') return `https://s.weibo.com/weibo?q=${encoded}`;
+    if(site === 'image') return `https://image.baidu.com/search/index?tn=baiduimage&word=${encoded}`;
+    if(site === 'amap') return `https://www.amap.com/search?query=${encoded}`;
+    return `https://www.baidu.com/s?wd=${encoded}`;
+  }
+
   function renderHoro(){
     document.getElementById('horoscope').innerHTML = people.map(p=>`
       <div class="item">
@@ -1338,6 +1402,9 @@
     renderCatDiary();
     renderCatCare();
     renderFishLeaderboard();
+    renderTheaterSubmissions();
+    renderHotComments();
+    renderExternalLinks();
     renderTodayPanel();
   }
 
@@ -1422,16 +1489,26 @@
 
   function renderHotTrends(){
     const list = (hotTrends.length ? hotTrends : fallbackHotTrends).slice(0,6);
+    const topicSelect = document.getElementById('hotCommentTopic');
     document.getElementById('hotTrends').innerHTML = list.map((item,i)=>`
       <div class="rankItem">
         <div class="rankNo">${i + 1}</div>
         <div>
           ${item.url || item.link ? `<a href="${item.url || item.link}" target="_blank" rel="noopener">${escapeHtml(item.title)}</a>` : `<b>${escapeHtml(item.title)}</b>`}
-          <br><span class="small">${escapeHtml(item.type_desc || item.score_desc || '今日热度在线')}</span>
+          <br>
+          <a class="miniBtn" href="${searchUrl('baidu', item.title)}" target="_blank" rel="noopener">百度</a>
+          <a class="miniBtn" href="${searchUrl('bili', item.title)}" target="_blank" rel="noopener">B站</a>
+          <a class="miniBtn" href="${searchUrl('weibo', item.title)}" target="_blank" rel="noopener">微博</a>
+          <span class="small">${escapeHtml(item.type_desc || item.score_desc || '今日热度在线')}</span>
         </div>
         <span class="badge">${escapeHtml(item.score_desc || item.score || item.hot_value || 'hot')}</span>
       </div>
     `).join('');
+    if(topicSelect){
+      const current = topicSelect.value;
+      topicSelect.innerHTML = list.map(item => `<option>${escapeHtml(item.title)}</option>`).join('');
+      if([...topicSelect.options].some(option => option.value === current)) topicSelect.value = current;
+    }
   }
 
   async function fetchHotTrends(){
@@ -1496,12 +1573,104 @@
 
   function pickMiniTheater(){
     const names = people.map(p => p.name).sort(() => Math.random() - .5);
-    const story = randomItem(theaterScenes)
+    const submittedScenes = theaterSubmissions.map(item => item.text).filter(Boolean);
+    const story = randomItem([...submittedScenes, ...theaterScenes])
       .replace('{a}', names[0])
       .replace('{b}', names[1])
       .replace('{c}', names[2]);
     document.getElementById('miniTheater').innerHTML =
       `${escapeHtml(story)}<span>今日关键词：${escapeHtml(dailyPick(['离谱但合理','快乐满格','先笑再说','全员可爱','剧情反转','班戟认证'], 'theater'))}</span>`;
+  }
+
+  function renderTheaterSubmissions(){
+    const box = document.getElementById('theaterSubmissions');
+    if(!box) return;
+    box.innerHTML = theaterSubmissions.length ? theaterSubmissions.slice(0,4).map(item => `
+      <div class="item">
+        <b>${escapeHtml(item.by || '匿名')}</b><br>
+        <span class="small">${escapeHtml(item.text)}</span>
+        ${item.by === currentIdentity ? `<button class="miniBtn editOnly" onclick="deleteTheaterSubmission('${item.id}')">删除</button>` : ''}
+      </div>
+    `).join('') : '<div class="empty">还没有投稿，编辑模式里可以投一个梗。</div>';
+  }
+
+  function addTheaterSubmission(){
+    const input = document.getElementById('theaterInput');
+    if(!input.value.trim()) return;
+    theaterSubmissions.unshift({
+      id: makeId('theater'),
+      text: input.value.trim(),
+      by: currentIdentity,
+      createdAt: new Date().toISOString()
+    });
+    theaterSubmissions = theaterSubmissions.slice(0,30);
+    input.value = '';
+    save(); renderTheaterSubmissions(); pickMiniTheater();
+  }
+
+  function deleteTheaterSubmission(id){
+    const item = theaterSubmissions.find(row => row.id === id);
+    if(item && item.by !== currentIdentity) return alert('只能删除自己投稿的小剧场。');
+    theaterSubmissions = theaterSubmissions.filter(row => row.id !== id);
+    save(); renderTheaterSubmissions();
+  }
+
+  function renderHotComments(){
+    const box = document.getElementById('hotComments');
+    if(!box) return;
+    box.innerHTML = hotComments.length ? hotComments.slice(0,8).map(item => `
+      <div class="item">
+        <b>${escapeHtml(item.topic)}</b><br>
+        <span class="small">${escapeHtml(item.by)}：${escapeHtml(item.text)}</span>
+        ${item.by === currentIdentity ? `<button class="miniBtn editOnly" onclick="deleteHotComment('${item.id}')">删除</button>` : ''}
+      </div>
+    `).join('') : '<div class="empty">还没有吐槽，等一个锐评。</div>';
+  }
+
+  function addHotComment(){
+    const topic = document.getElementById('hotCommentTopic').value || '今日热搜';
+    const input = document.getElementById('hotCommentInput');
+    if(!input.value.trim()) return;
+    hotComments.unshift({
+      id: makeId('hot'),
+      topic,
+      text: input.value.trim(),
+      by: currentIdentity,
+      createdAt: new Date().toISOString()
+    });
+    hotComments = hotComments.slice(0,80);
+    input.value = '';
+    save(); renderHotComments();
+  }
+
+  function deleteHotComment(id){
+    const item = hotComments.find(row => row.id === id);
+    if(item && item.by !== currentIdentity) return alert('只能删除自己的热搜吐槽。');
+    hotComments = hotComments.filter(row => row.id !== id);
+    save(); renderHotComments();
+  }
+
+  function renderExternalLinks(){
+    const box = document.getElementById('externalLinks');
+    if(!box) return;
+    box.innerHTML = externalLinks.map(link => `
+      <a class="quickLink" href="${link.url}" target="_blank" rel="noopener">
+        <b>${escapeHtml(link.title)}</b>
+        <span class="small">${escapeHtml(link.desc)}</span>
+      </a>
+    `).join('');
+  }
+
+  function searchMeme(){
+    const input = document.getElementById('memeKeyword');
+    const keyword = input.value.trim() || 'chiikawa 表情包';
+    window.open(searchUrl('image', keyword), '_blank', 'noopener');
+  }
+
+  function searchPlace(){
+    const input = document.getElementById('placeKeyword');
+    const keyword = input.value.trim() || '南京 周末 去哪儿';
+    window.open(searchUrl('amap', keyword), '_blank', 'noopener');
   }
 
   function pickLuckyBgm(keepDaily=false){
@@ -1890,6 +2059,8 @@
         if(Array.isArray(data.catDiary)) catDiary = data.catDiary;
         if(Array.isArray(data.catCare)) catCare = data.catCare;
         if(Array.isArray(data.fishLeaderboard)) fishLeaderboard = data.fishLeaderboard;
+        if(Array.isArray(data.theaterSubmissions)) theaterSubmissions = data.theaterSubmissions;
+        if(Array.isArray(data.hotComments)) hotComments = data.hotComments;
         if(typeof data.lastDinner === 'string') lastDinner = data.lastDinner;
         save(); renderPeople(); renderProfiles(); renderHoro(); renderMsg(); renderMemories(); renderPhotos(); renderInteractiveBoards();
         alert('宿舍数据导入成功！');
