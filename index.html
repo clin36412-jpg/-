@@ -321,8 +321,29 @@
       border:2px solid #bdeedd; border-radius:22px; overflow:hidden;
       position:relative; margin-top:10px;
     }
-    #fishGame { width:100%; height:260px; display:block; touch-action:none; }
+    #fishGame, #guardGame { width:100%; height:260px; display:block; touch-action:none; }
     .gameHud { display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-top:10px; }
+    .aiSquad { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:12px; }
+    .aiMate {
+      border:1px solid #ffd4e8; border-radius:20px; background:#fff;
+      padding:10px; cursor:pointer; transition:transform .16s ease, box-shadow .16s ease;
+      display:flex; gap:10px; align-items:center;
+    }
+    .aiMate:hover, .aiMate.active { transform:translateY(-3px); box-shadow:0 10px 22px rgba(255,90,165,.12); }
+    .aiMate.active { border-color:#ff8fbd; background:linear-gradient(135deg,#fff,#fff2f8); }
+    .aiAvatar {
+      width:48px; height:48px; border-radius:18px; display:flex; align-items:center; justify-content:center;
+      color:#fff; font-size:24px; font-weight:1000; box-shadow:inset 0 0 0 3px rgba(255,255,255,.55);
+    }
+    .treatGrid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:12px; }
+    .treatSlot {
+      min-height:88px; border-radius:20px; border:2px dashed #ffd4e8; background:#fff;
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      font-weight:900; color:#7a365d; cursor:pointer; transition:transform .16s ease, background .16s ease;
+    }
+    .treatSlot:hover, .treatSlot.selected { transform:translateY(-3px); background:#fff7fb; border-style:solid; }
+    .treatIcon { display:block; font-size:30px; margin-bottom:4px; }
+    .gameNote { min-height:46px; border-radius:18px; background:#fff7fb; border:1px solid #ffd4e8; padding:10px 12px; margin-top:10px; font-weight:900; color:#7a365d; }
     .bottomNav {
       position:fixed; left:50%; bottom:14px; transform:translateX(-50%);
       width:min(720px, calc(100% - 24px)); z-index:20;
@@ -391,6 +412,7 @@
     @media (max-width:900px){
       .photoGrid { grid-template-columns:repeat(2,1fr); }
       .quickGrid { grid-template-columns:1fr; }
+      .aiSquad,.treatGrid { grid-template-columns:1fr; }
       .todayPanel { grid-template-columns:1fr; }
       .courseControls,.courseSummary { grid-template-columns:1fr; }
       .card { border-radius:22px; padding:15px; }
@@ -638,6 +660,47 @@
   </section>
 
   <section class="card" id="miniGame" style="margin-top:16px;">
+    <div class="title">🎮 三人 AI 小队</div>
+    <div class="aiSquad" id="aiSquad"></div>
+    <p class="small">选择一个 AI 队友进入小游戏：洪艺嘉偏爆发、牛蕾晴偏稳定、鲍炎岐偏防守。只是可爱设定，不是真人评价。</p>
+  </section>
+
+  <section class="grid two" id="catGames" style="margin-top:16px;">
+    <div class="card">
+      <div class="title">🛡️ 班戟守护战</div>
+      <div class="bigText" id="guardIntro">点掉掉下来的 DDL、早八和红温队友，保护班戟睡觉。</div>
+      <div class="gameCanvasWrap">
+        <canvas id="guardGame" width="760" height="260"></canvas>
+      </div>
+      <div class="gameHud">
+        <span class="badge" id="guardScore">守护值 0</span>
+        <span class="badge" id="guardLife">班戟睡意 5</span>
+        <span class="badge" id="guardTime">时间 25</span>
+      </div>
+      <div class="row" style="margin-top:10px;">
+        <button class="btn2" onclick="startGuardGame()">开始守护</button>
+        <button onclick="activateGuardSkill()">队友技能</button>
+      </div>
+      <p class="small">手机直接点屏幕里的坏东西。电脑也可以点。技能每局能用一次。</p>
+    </div>
+
+    <div class="card">
+      <div class="title">🍱 班戟投喂合成</div>
+      <div class="bigText" id="mergeIntro">点两个一样的小零食合成更高级的投喂，看看班戟今天能吃到什么。</div>
+      <div class="treatGrid" id="treatGrid"></div>
+      <div class="gameNote" id="mergeNote">先点“生成零食”，再点两个相同格子合成。</div>
+      <div class="gameHud">
+        <span class="badge" id="mergeScore">投喂值 0</span>
+        <span class="badge" id="mergeBest">最高等级 1</span>
+      </div>
+      <div class="row" style="margin-top:10px;">
+        <button onclick="spawnTreat()">生成零食</button>
+        <button class="btn2" onclick="feedMergedTreat()">投喂班戟</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" style="margin-top:16px;">
     <div class="title">🎣 班戟接小鱼</div>
     <div class="bigText" id="fishGameIntro">20 秒内接住掉下来的小鱼，漏掉也没关系，班戟会假装没看见。</div>
     <div class="gameCanvasWrap">
@@ -787,6 +850,25 @@
     timer:null,
     best:Number(localStorage.getItem('lalaFishBest_v1') || 0)
   };
+  let selectedAIMate = localStorage.getItem('lalaSelectedAIMate_v1') || '牛蕾晴';
+  let guardGame = {
+    running:false,
+    score:0,
+    life:5,
+    time:25,
+    threats:[],
+    lastSpawn:0,
+    lastTick:0,
+    timer:null,
+    skillUsed:false,
+    shieldUntil:0
+  };
+  let mergeGame = JSON.parse(localStorage.getItem('lalaMergeGame_v1') || JSON.stringify({
+    score:0,
+    best:1,
+    treats:Array(8).fill(0),
+    selected:null
+  }));
   let currentIdentity = localStorage.getItem('lalaIdentity_v1') || '牛蕾晴';
 
   const peopleDefault = [
@@ -799,6 +881,20 @@
     '牛蕾晴': { nickname:'', mbti:'', drink:'', role:'', motto:'' },
     '鲍炎岐': { nickname:'', mbti:'', drink:'', role:'', motto:'' }
   };
+  const aiMates = {
+    '洪艺嘉': { icon:'嘉', color:'#ff7aa8', emoji:'🦁', title:'灵感爆发型', skill:'清掉一半坏东西' },
+    '牛蕾晴': { icon:'晴', color:'#7c6ee6', emoji:'🐐', title:'稳定守护型', skill:'恢复 1 点睡意' },
+    '鲍炎岐': { icon:'鲍', color:'#3e8f7b', emoji:'🌊', title:'防守冷静型', skill:'开启 4 秒护盾' }
+  };
+  const treatLevels = [
+    { icon:'', name:'空格' },
+    { icon:'🥛', name:'小奶' },
+    { icon:'🐟', name:'小鱼' },
+    { icon:'🍗', name:'鸡腿' },
+    { icon:'🍤', name:'虾仁' },
+    { icon:'🍰', name:'蛋糕' },
+    { icon:'👑', name:'班戟皇冠餐' }
+  ];
 
   let people = JSON.parse(localStorage.getItem('cutePeople_v2') || JSON.stringify(peopleDefault));
   let profiles = JSON.parse(localStorage.getItem('lalaProfiles_v1') || JSON.stringify(profileDefault));
@@ -991,7 +1087,7 @@
   }
 
   function stateData(){
-    return { people, profiles, messages, memories, photos, moods, moodHistory, catStatus, catDiary, catCare, gameRoom, foodVotes, dinnerOptions, lastDinner, fishLeaderboard, theaterSubmissions, hotComments };
+    return { people, profiles, messages, memories, photos, moods, moodHistory, catStatus, catDiary, catCare, gameRoom, foodVotes, dinnerOptions, lastDinner, fishLeaderboard, theaterSubmissions, hotComments, mergeGame };
   }
 
   function saveLocal(){
@@ -1016,6 +1112,8 @@
     localStorage.setItem('lalaLastDinner_v1', lastDinner);
     localStorage.setItem('lalaTheaterSubmissions_v1', JSON.stringify(theaterSubmissions));
     localStorage.setItem('lalaHotComments_v1', JSON.stringify(hotComments));
+    localStorage.setItem('lalaMergeGame_v1', JSON.stringify(mergeGame));
+    localStorage.setItem('lalaSelectedAIMate_v1', selectedAIMate);
   }
 
   function save(){
@@ -1058,6 +1156,12 @@
     if(Array.isArray(data.fishLeaderboard)) fishLeaderboard = data.fishLeaderboard;
     if(Array.isArray(data.theaterSubmissions)) theaterSubmissions = data.theaterSubmissions;
     if(Array.isArray(data.hotComments)) hotComments = data.hotComments;
+    if(data.mergeGame && typeof data.mergeGame === 'object') mergeGame = {
+      score:Number(data.mergeGame.score || 0),
+      best:Number(data.mergeGame.best || 1),
+      treats:Array.isArray(data.mergeGame.treats) ? data.mergeGame.treats.slice(0,8) : Array(8).fill(0),
+      selected:null
+    };
     saveLocal();
     renderIdentity(); renderPeople(); renderProfiles(); renderHoro(); renderMsg(); renderMemories(); renderPhotos(); renderInteractiveBoards(); renderTodayPanel();
     applyingRemote = false;
@@ -1563,7 +1667,30 @@
     renderTheaterSubmissions();
     renderHotComments();
     renderExternalLinks();
+    renderAISquad();
+    renderMergeGame();
     renderTodayPanel();
+  }
+
+  function renderAISquad(){
+    const box = document.getElementById('aiSquad');
+    if(!box) return;
+    box.innerHTML = people.map(person => {
+      const mate = aiMates[person.name] || aiMates['牛蕾晴'];
+      return `
+        <div class="aiMate ${selectedAIMate === person.name ? 'active' : ''}" onclick="selectAIMate('${person.name}')">
+          <div class="aiAvatar" style="background:linear-gradient(135deg,${mate.color},#ffcf4a)">${mate.icon}</div>
+          <div><b>${person.name} AI</b><br><span class="small">${mate.emoji} ${mate.title}<br>${mate.skill}</span></div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function selectAIMate(name){
+    selectedAIMate = name;
+    saveLocal();
+    renderAISquad();
+    showToast(name + ' AI 已加入');
   }
 
   function renderFishLeaderboard(){
@@ -1927,6 +2054,260 @@
     return document.getElementById('fishGame');
   }
 
+  function guardCanvas(){
+    return document.getElementById('guardGame');
+  }
+
+  function drawAIMate(ctx, x, y, name, size=42){
+    const mate = aiMates[name] || aiMates['牛蕾晴'];
+    ctx.save();
+    ctx.fillStyle = mate.color;
+    ctx.beginPath();
+    ctx.roundRect(x - size/2, y - size/2, size, size, 14);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.75)';
+    ctx.beginPath();
+    ctx.arc(x + size*.18, y - size*.16, size*.16, 0, Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.font = '900 15px PingFang SC, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(mate.icon, x, y + 2);
+    ctx.restore();
+  }
+
+  function drawGuardGame(){
+    const canvas = guardCanvas();
+    if(!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+    ctx.clearRect(0,0,width,height);
+    const bg = ctx.createLinearGradient(0,0,width,height);
+    bg.addColorStop(0,'#fff7fb');
+    bg.addColorStop(.55,'#e9fff7');
+    bg.addColorStop(1,'#dff3ff');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0,0,width,height);
+
+    ctx.fillStyle = 'rgba(255,143,189,.16)';
+    for(let i=0;i<9;i++){
+      ctx.beginPath();
+      ctx.arc(50 + i*84, 42 + (i%3)*32, 10, 0, Math.PI*2);
+      ctx.fill();
+    }
+
+    guardGame.threats.forEach(threat => {
+      ctx.save();
+      ctx.translate(threat.x, threat.y);
+      ctx.fillStyle = threat.color;
+      ctx.beginPath();
+      ctx.roundRect(-25,-20,50,40,14);
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.font = '900 20px PingFang SC, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(threat.icon, 0, 0);
+      ctx.restore();
+    });
+
+    const catX = width / 2;
+    const catY = height - 44;
+    if(guardGame.shieldUntil > performance.now()){
+      ctx.strokeStyle = 'rgba(126,110,230,.55)';
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.arc(catX, catY - 8, 70, 0, Math.PI*2);
+      ctx.stroke();
+    }
+    drawAIMate(ctx, 58, height - 48, selectedAIMate, 44);
+    ctx.fillStyle = '#fff3dc';
+    ctx.strokeStyle = '#42515a';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.roundRect(catX - 58, catY - 30, 116, 55, 22);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#42515a';
+    ctx.font = '900 21px PingFang SC, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('=•ᴥ•= zZ', catX, catY + 2);
+  }
+
+  function updateGuardHud(){
+    document.getElementById('guardScore').innerText = '守护值 ' + guardGame.score;
+    document.getElementById('guardLife').innerText = '班戟睡意 ' + guardGame.life;
+    document.getElementById('guardTime').innerText = '时间 ' + guardGame.time;
+  }
+
+  function startGuardGame(){
+    guardGame.running = true;
+    guardGame.score = 0;
+    guardGame.life = 5;
+    guardGame.time = 25;
+    guardGame.threats = [];
+    guardGame.lastSpawn = 0;
+    guardGame.lastTick = performance.now();
+    guardGame.skillUsed = false;
+    guardGame.shieldUntil = 0;
+    document.getElementById('guardIntro').innerText = `${selectedAIMate} AI 已上线，保护班戟睡觉。`;
+    clearInterval(guardGame.timer);
+    guardGame.timer = setInterval(() => {
+      guardGame.time -= 1;
+      if(guardGame.time <= 0) endGuardGame(true);
+      updateGuardHud();
+    }, 1000);
+    updateGuardHud();
+    requestAnimationFrame(stepGuardGame);
+  }
+
+  function endGuardGame(won=false){
+    guardGame.running = false;
+    clearInterval(guardGame.timer);
+    document.getElementById('guardIntro').innerText = won
+      ? `守护成功！${selectedAIMate} AI 和班戟都很满意，本局守护值 ${guardGame.score}。`
+      : `班戟被吵醒了。本局守护值 ${guardGame.score}，下次继续保护。`;
+    updateGuardHud();
+    drawGuardGame();
+  }
+
+  function stepGuardGame(now){
+    if(!guardGame.running) return;
+    const canvas = guardCanvas();
+    const delta = Math.min(34, now - guardGame.lastTick);
+    guardGame.lastTick = now;
+    if(now - guardGame.lastSpawn > 720){
+      const pool = [
+        { icon:'DDL', color:'#ff7aa8' },
+        { icon:'早八', color:'#7c6ee6' },
+        { icon:'红温', color:'#f05252' },
+        { icon:'作业', color:'#3e8f7b' }
+      ];
+      const item = randomItem(pool);
+      guardGame.threats.push({
+        ...item,
+        x: 42 + Math.random() * (canvas.width - 84),
+        y: -30,
+        speed: 1.6 + Math.random() * 1.8
+      });
+      guardGame.lastSpawn = now;
+    }
+    guardGame.threats.forEach(threat => threat.y += threat.speed * delta / 16);
+    guardGame.threats = guardGame.threats.filter(threat => {
+      if(threat.y > canvas.height - 60){
+        if(guardGame.shieldUntil <= now) guardGame.life -= 1;
+        if(guardGame.life <= 0) endGuardGame(false);
+        return false;
+      }
+      return true;
+    });
+    updateGuardHud();
+    drawGuardGame();
+    requestAnimationFrame(stepGuardGame);
+  }
+
+  function hitGuardThreat(event){
+    if(!guardGame.running) return;
+    const canvas = guardCanvas();
+    const rect = canvas.getBoundingClientRect();
+    const x = (event.clientX - rect.left) * canvas.width / rect.width;
+    const y = (event.clientY - rect.top) * canvas.height / rect.height;
+    const index = guardGame.threats.findIndex(threat => Math.abs(threat.x - x) < 34 && Math.abs(threat.y - y) < 30);
+    if(index >= 0){
+      guardGame.threats.splice(index, 1);
+      guardGame.score += selectedAIMate === '洪艺嘉' ? 2 : 1;
+      updateGuardHud();
+      drawGuardGame();
+    }
+  }
+
+  function activateGuardSkill(){
+    if(!guardGame.running) return showToast('先开始守护战');
+    if(guardGame.skillUsed) return showToast('这局技能已经用过啦');
+    guardGame.skillUsed = true;
+    if(selectedAIMate === '洪艺嘉'){
+      guardGame.threats = guardGame.threats.slice(Math.ceil(guardGame.threats.length / 2));
+      guardGame.score += 3;
+      showToast('洪艺嘉 AI 清场成功');
+    } else if(selectedAIMate === '牛蕾晴'){
+      guardGame.life = Math.min(6, guardGame.life + 1);
+      showToast('牛蕾晴 AI 恢复睡意');
+    } else {
+      guardGame.shieldUntil = performance.now() + 4000;
+      showToast('鲍炎岐 AI 开盾');
+    }
+    updateGuardHud();
+    drawGuardGame();
+  }
+
+  function renderMergeGame(){
+    const box = document.getElementById('treatGrid');
+    if(!box) return;
+    mergeGame.treats = [...mergeGame.treats, ...Array(8).fill(0)].slice(0,8);
+    box.innerHTML = mergeGame.treats.map((level, index) => {
+      const treat = treatLevels[level] || treatLevels[0];
+      return `
+        <div class="treatSlot ${mergeGame.selected === index ? 'selected' : ''}" onclick="selectTreat(${index})">
+          <span class="treatIcon">${treat.icon || '＋'}</span>
+          ${treat.name}
+        </div>
+      `;
+    }).join('');
+    document.getElementById('mergeScore').innerText = '投喂值 ' + mergeGame.score;
+    document.getElementById('mergeBest').innerText = '最高等级 ' + mergeGame.best;
+  }
+
+  function spawnTreat(){
+    const empty = mergeGame.treats.map((level,index) => level ? -1 : index).filter(index => index >= 0);
+    if(!empty.length) return showToast('格子满啦，先合成一下');
+    mergeGame.treats[randomItem(empty)] = Math.random() < .78 ? 1 : 2;
+    mergeGame.selected = null;
+    save(); renderMergeGame(); showToast('零食出现了');
+  }
+
+  function selectTreat(index){
+    const level = mergeGame.treats[index];
+    if(!level) return showToast('这里还没有零食');
+    if(mergeGame.selected === null){
+      mergeGame.selected = index;
+      renderMergeGame();
+      return;
+    }
+    const first = mergeGame.selected;
+    if(first === index){
+      mergeGame.selected = null;
+      renderMergeGame();
+      return;
+    }
+    if(mergeGame.treats[first] === level){
+      const nextLevel = Math.min(level + 1, treatLevels.length - 1);
+      mergeGame.treats[first] = 0;
+      mergeGame.treats[index] = nextLevel;
+      mergeGame.score += nextLevel * 2;
+      mergeGame.best = Math.max(mergeGame.best, nextLevel);
+      mergeGame.selected = null;
+      document.getElementById('mergeNote').innerText = `合成成功：${treatLevels[nextLevel].name}！`;
+      save(); renderMergeGame(); showToast('合成成功');
+    } else {
+      mergeGame.selected = index;
+      renderMergeGame();
+      showToast('要选两个一样的');
+    }
+  }
+
+  function feedMergedTreat(){
+    const best = Math.max(...mergeGame.treats);
+    if(!best) return showToast('先合成一点吃的');
+    const index = mergeGame.treats.indexOf(best);
+    mergeGame.treats[index] = 0;
+    mergeGame.score += best * 3;
+    catStatus = `班戟刚吃到 ${treatLevels[best].name}，满意地眯起眼睛。`;
+    document.getElementById('mergeNote').innerText = `投喂成功：${treatLevels[best].name}`;
+    save(); renderMergeGame(); renderCatStatus(); renderTodayPanel(); showToast('班戟吃饱了');
+  }
+
   function drawFishGame(){
     const canvas = fishCanvas();
     if(!canvas) return;
@@ -2224,6 +2605,12 @@
         if(Array.isArray(data.fishLeaderboard)) fishLeaderboard = data.fishLeaderboard;
         if(Array.isArray(data.theaterSubmissions)) theaterSubmissions = data.theaterSubmissions;
         if(Array.isArray(data.hotComments)) hotComments = data.hotComments;
+        if(data.mergeGame && typeof data.mergeGame === 'object') mergeGame = {
+          score:Number(data.mergeGame.score || 0),
+          best:Number(data.mergeGame.best || 1),
+          treats:Array.isArray(data.mergeGame.treats) ? data.mergeGame.treats.slice(0,8) : Array(8).fill(0),
+          selected:null
+        };
         if(typeof data.lastDinner === 'string') lastDinner = data.lastDinner;
         save(); renderPeople(); renderProfiles(); renderHoro(); renderMsg(); renderMemories(); renderPhotos(); renderInteractiveBoards();
         alert('宿舍数据导入成功！');
@@ -2284,6 +2671,10 @@
   setInterval(refreshCourseCountdowns,60000);
   updateFishHud();
   drawFishGame();
+  updateGuardHud();
+  drawGuardGame();
+  const guardCanvasEl = guardCanvas();
+  if(guardCanvasEl) guardCanvasEl.addEventListener('pointerdown', hitGuardThreat);
   window.addEventListener('keydown', event => {
     if(event.key === 'ArrowLeft') moveFishCat(-1);
     if(event.key === 'ArrowRight') moveFishCat(1);
