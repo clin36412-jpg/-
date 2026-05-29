@@ -139,6 +139,9 @@
     .courseControls { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
     .courseSummary { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:12px; }
     .courseSummary .item { min-height:76px; }
+    .todayPanel { display:grid; grid-template-columns:1.2fr repeat(3,1fr); gap:12px; margin-top:16px; }
+    .todayTile { background:#fff; border:1px solid #bdeedd; border-radius:20px; padding:14px; min-height:104px; }
+    .todayTile b { display:block; color:#3e8f7b; margin-bottom:6px; }
     .bar { height:12px; background:#ffe0ef; border-radius:999px; overflow:hidden; margin:10px 0; }
     .bar span { display:block; height:100%; background:linear-gradient(90deg,#ff8fbd,#ff5aa5); border-radius:999px; }
     input, select {
@@ -200,6 +203,13 @@
     }
     .photoCard img { width:100%; aspect-ratio:1/1; object-fit:cover; display:block; }
     .photoCard .small { padding:8px 10px; margin:0; }
+    .photoModal {
+      position:fixed; inset:0; z-index:40; display:none; align-items:center; justify-content:center;
+      background:rgba(35,45,50,.72); padding:22px;
+    }
+    .photoModal.open { display:flex; }
+    .photoModal img { max-width:min(920px, 96vw); max-height:82vh; border-radius:18px; background:#fff; }
+    .photoModal button { position:fixed; top:18px; right:18px; }
     .chiikawa {
       width:100%; max-height:170px; object-fit:contain; border-radius:22px;
       background:#fff; border:2px solid #ffd4e8; padding:8px;
@@ -211,6 +221,8 @@
     .checkItem { display:flex; justify-content:space-between; gap:8px; align-items:center; background:#fff7fb; border:1px solid #ffd4e8; border-radius:16px; padding:10px; }
     .voteBar { height:8px; border-radius:999px; background:#ffe0ef; overflow:hidden; margin-top:6px; }
     .voteBar span { display:block; height:100%; background:#ff8fbd; border-radius:999px; }
+    .calendarGrid { display:grid; grid-template-columns:repeat(7,1fr); gap:8px; margin-top:12px; }
+    .calendarCell { min-height:74px; background:#fff; border:1px solid #ffd4e8; border-radius:14px; padding:8px; font-size:12px; }
     .empty { text-align:center; padding:18px; border-radius:18px; background:#fff7fb; color:#8b7180; }
     .timeline { position:relative; padding-left:12px; }
     .timeline .item { border-left:6px solid #ff8fbd; }
@@ -235,6 +247,7 @@
     footer { text-align:center; margin-top:24px; color:#9a7889; }
     @media (max-width:900px){
       .photoGrid { grid-template-columns:repeat(2,1fr); }
+      .todayPanel { grid-template-columns:1fr; }
       .courseControls,.courseSummary { grid-template-columns:1fr; }
       .card { border-radius:22px; padding:15px; }
       .course { align-items:flex-start; }
@@ -250,6 +263,13 @@
     <h1>lala land</h1>
     <p class="sub">三个人和一只小猫的共享小站 · 课表 · 天气 · 开黑 · 照片墙 · 留言 · 今日吃什么</p>
   </header>
+
+  <section class="todayPanel" id="todayPanel">
+    <div class="todayTile"><b>今日课程</b><span id="todayNextCourse">正在计算下一节课...</span></div>
+    <div class="todayTile"><b>天气</b><span id="todayWeather">读取中...</span></div>
+    <div class="todayTile"><b>班戟</b><span id="todayCat">今天想贴贴</span></div>
+    <div class="todayTile"><b>晚饭</b><span id="todayDinner">还没抽签</span></div>
+  </section>
 
   <section class="grid three" id="people"></section>
 
@@ -341,6 +361,7 @@
       </select>
       <div class="optionGrid" id="moodOptions" style="margin-top:10px;"></div>
       <div class="list" id="moodBoard" style="margin-top:12px;"></div>
+      <div class="calendarGrid" id="moodHistory"></div>
     </div>
 
     <div class="card">
@@ -372,6 +393,11 @@
 
     <div class="card">
       <div class="title">🥤 奶茶外卖投票</div>
+      <select id="votePerson">
+        <option>洪艺嘉</option>
+        <option>牛蕾晴</option>
+        <option>鲍炎岐</option>
+      </select>
       <div class="list" id="foodVotes"></div>
       <div class="row" style="margin-top:10px;">
         <input id="voteInput" placeholder="新增选项，比如：麻辣烫、霸王茶姬" onkeydown="if(event.key==='Enter') addVoteOption()" />
@@ -393,12 +419,20 @@
     <div class="card">
       <div class="title">📸 班戟照片墙</div>
       <div class="row">
+        <select id="photoCategory">
+          <option>班戟</option>
+          <option>三人</option>
+          <option>吃饭</option>
+          <option>王者</option>
+          <option>校园</option>
+        </select>
         <input id="photoCaption" placeholder="照片说明，比如：班戟今日营业" />
         <label class="upload">上传照片
           <input type="file" accept="image/*" onchange="uploadPhoto(this.files[0]); this.value=''">
         </label>
       </div>
       <div class="photoGrid" id="photoWall"></div>
+      <div class="tabs" id="photoFilters" style="margin-top:12px;"></div>
       <p class="small">照片会同步到云端。图片太大会影响加载，建议选几张最可爱的。</p>
     </div>
 
@@ -416,6 +450,15 @@
       <button onclick="addMemory()">加入时间线</button>
     </div>
     <div class="list timeline" id="timeline" style="margin-top:14px;"></div>
+  </section>
+
+  <section class="card" id="catCalendar" style="margin-top:16px;">
+    <div class="title">🐾 班戟日历</div>
+    <div class="row">
+      <input id="catDiaryInput" placeholder="记录今天的班戟：比如 睡了一下午但很可爱" onkeydown="if(event.key==='Enter') addCatDiary()" />
+      <button onclick="addCatDiary()">记录今天</button>
+    </div>
+    <div class="calendarGrid" id="catDiary"></div>
   </section>
 
   <section class="card" id="messagesSection" style="margin-top:16px;">
@@ -459,6 +502,11 @@
   <a href="#messagesSection"><span>💌</span>留言</a>
 </nav>
 
+<div class="photoModal" id="photoModal" onclick="closePhotoModal()">
+  <button onclick="closePhotoModal()">关闭</button>
+  <img id="modalPhoto" alt="放大的照片">
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
   const SUPABASE_URL = 'https://zpfduanawekurjzqulgu.supabase.co';
@@ -494,20 +542,24 @@
     '🌃 深夜夜谈、散步、奶茶和突然的爆笑'
   ]));
   let photos = JSON.parse(localStorage.getItem('cutePhotos_v4') || '[]');
+  let photoFilter = localStorage.getItem('lalaPhotoFilter_v1') || '全部';
   let selectedCourseOwner = localStorage.getItem('selectedCourseOwner_v1') || '牛蕾晴';
   let selectedCourseDay = localStorage.getItem('selectedCourseDay_v1') || weekdayName();
   let moods = JSON.parse(localStorage.getItem('cuteMoods_v1') || '{}');
+  let moodHistory = JSON.parse(localStorage.getItem('lalaMoodHistory_v1') || '[]');
   let catStatus = localStorage.getItem('cuteCatStatus_v1') || '班戟今天想贴贴 🐾';
+  let catDiary = JSON.parse(localStorage.getItem('lalaCatDiary_v1') || '[]');
   let gameRoom = JSON.parse(localStorage.getItem('cuteGameRoom_v1') || JSON.stringify({
     '洪艺嘉': { online:false, role:'中路' },
     '牛蕾晴': { online:false, role:'发育路' },
     '鲍炎岐': { online:false, role:'游走' }
   }));
   let foodVotes = JSON.parse(localStorage.getItem('cuteFoodVotes_v1') || JSON.stringify([
-    { id:'vote_malatang', name:'麻辣烫', count:0 },
-    { id:'vote_milk_tea', name:'奶茶', count:0 },
-    { id:'vote_rice', name:'烤肉饭', count:0 }
+    { id:'vote_malatang', name:'麻辣烫', count:0, voters:[] },
+    { id:'vote_milk_tea', name:'奶茶', count:0, voters:[] },
+    { id:'vote_rice', name:'烤肉饭', count:0, voters:[] }
   ]));
+  foodVotes = foodVotes.map(v => ({ ...v, voters:Array.isArray(v.voters) ? v.voters : [] }));
   let dinnerOptions = JSON.parse(localStorage.getItem('cuteDinnerOptions_v1') || '[]');
   const defaultDinnerOptions = [
     '麻辣烫','烤肉饭','黄焖鸡','螺蛳粉','麦当劳','塔斯汀','小火锅','便利店饭团','兰州拉面','沙县小吃',
@@ -515,6 +567,7 @@
     '麻辣香锅','烤冷面','饺子馄饨','轻食沙拉','韩式拌饭','关东煮','炸串','披萨','粥铺','宿舍泡面加蛋'
   ];
   if(dinnerOptions.length < 30) dinnerOptions = [...new Set([...dinnerOptions, ...defaultDinnerOptions])].slice(0, 30);
+  let lastDinner = localStorage.getItem('lalaLastDinner_v1') || '';
 
   const weatherTips = [
     '南京栖霞区明天可能有阵雨，记得带伞 ☔',
@@ -624,7 +677,7 @@
   }
 
   function stateData(){
-    return { people, profiles, messages, memories, photos, moods, catStatus, gameRoom, foodVotes, dinnerOptions };
+    return { people, profiles, messages, memories, photos, moods, moodHistory, catStatus, catDiary, gameRoom, foodVotes, dinnerOptions, lastDinner };
   }
 
   function saveLocal(){
@@ -633,13 +686,17 @@
     localStorage.setItem('cuteMessages_v2', JSON.stringify(messages));
     localStorage.setItem('cuteMemories_v3', JSON.stringify(memories));
     localStorage.setItem('cutePhotos_v4', JSON.stringify(photos));
+    localStorage.setItem('lalaPhotoFilter_v1', photoFilter);
     localStorage.setItem('selectedCourseOwner_v1', selectedCourseOwner);
     localStorage.setItem('selectedCourseDay_v1', selectedCourseDay);
     localStorage.setItem('cuteMoods_v1', JSON.stringify(moods));
+    localStorage.setItem('lalaMoodHistory_v1', JSON.stringify(moodHistory));
     localStorage.setItem('cuteCatStatus_v1', catStatus);
+    localStorage.setItem('lalaCatDiary_v1', JSON.stringify(catDiary));
     localStorage.setItem('cuteGameRoom_v1', JSON.stringify(gameRoom));
     localStorage.setItem('cuteFoodVotes_v1', JSON.stringify(foodVotes));
     localStorage.setItem('cuteDinnerOptions_v1', JSON.stringify(dinnerOptions));
+    localStorage.setItem('lalaLastDinner_v1', lastDinner);
   }
 
   function save(){
@@ -671,12 +728,15 @@
     if(Array.isArray(data.memories)) memories = data.memories;
     if(Array.isArray(data.photos)) photos = data.photos;
     if(data.moods && typeof data.moods === 'object') moods = data.moods;
+    if(Array.isArray(data.moodHistory)) moodHistory = data.moodHistory;
     if(typeof data.catStatus === 'string') catStatus = data.catStatus;
+    if(Array.isArray(data.catDiary)) catDiary = data.catDiary;
     if(data.gameRoom && typeof data.gameRoom === 'object') gameRoom = data.gameRoom;
-    if(Array.isArray(data.foodVotes)) foodVotes = data.foodVotes;
+    if(Array.isArray(data.foodVotes)) foodVotes = data.foodVotes.map(v => ({ ...v, voters:Array.isArray(v.voters) ? v.voters : [] }));
     if(Array.isArray(data.dinnerOptions)) dinnerOptions = [...new Set([...data.dinnerOptions, ...defaultDinnerOptions])].slice(0, 30);
+    if(typeof data.lastDinner === 'string') lastDinner = data.lastDinner;
     saveLocal();
-    renderPeople(); renderProfiles(); renderHoro(); renderMsg(); renderMemories(); renderPhotos(); renderInteractiveBoards();
+    renderPeople(); renderProfiles(); renderHoro(); renderMsg(); renderMemories(); renderPhotos(); renderInteractiveBoards(); renderTodayPanel();
     applyingRemote = false;
   }
 
@@ -736,6 +796,30 @@
     return ['周日','周一','周二','周三','周四','周五','周六'][new Date().getDay()];
   }
 
+  function todayKey(offset=0){
+    const date = new Date();
+    date.setDate(date.getDate() + offset);
+    return date.toISOString().slice(0,10);
+  }
+
+  function shortDate(dateKey){
+    return dateKey.slice(5).replace('-','/');
+  }
+
+  function parseStartMinutes(time){
+    const match = String(time).match(/(\d{2}):(\d{2})/);
+    if(!match) return 9999;
+    return Number(match[1]) * 60 + Number(match[2]);
+  }
+
+  function nextCourseFor(owner){
+    const now = new Date();
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+    const courses = (courseBooks[owner] || []).filter(c => c.day === weekdayName())
+      .sort((a,b) => parseStartMinutes(a.time) - parseStartMinutes(b.time));
+    return courses.find(c => parseStartMinutes(c.time) >= nowMinutes) || courses[0] || null;
+  }
+
   function makeId(prefix){
     return prefix + '_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,8);
   }
@@ -749,6 +833,15 @@
       pinned: Boolean(message.pinned),
       createdAt: message.createdAt || new Date().toISOString()
     }));
+  }
+
+  function renderTodayPanel(){
+    const next = nextCourseFor(selectedCourseOwner);
+    document.getElementById('todayNextCourse').innerHTML = next
+      ? `${selectedCourseOwner}<br>${escapeHtml(next.name)}<br>${escapeHtml(next.time)} · ${escapeHtml(next.place)}`
+      : `${selectedCourseOwner} 今天没有课`;
+    document.getElementById('todayCat').innerText = catStatus;
+    document.getElementById('todayDinner').innerText = lastDinner || '还没抽签';
   }
 
   messages = normalizeMessages(messages);
@@ -837,6 +930,8 @@
     document.getElementById('courseSummary').innerHTML = `
       <div class="item todayCourse"><b>今天｜${today}</b><br><span class="small">${todayCourses.length ? todayCourses.map(c=>c.name).join('、') : '今天没有课。'}</span></div>
       <div class="item"><b>当前查看｜${selectedCourseDay}</b><br><span class="small">${selectedCourseOwner} · ${dayCourses.length} 门课</span></div>
+      <div class="item"><b>下一节课</b><br><span class="small">${nextCourseFor(selectedCourseOwner) ? `${nextCourseFor(selectedCourseOwner).name} · ${nextCourseFor(selectedCourseOwner).time}` : '今天没有下一节课'}</span></div>
+      <div class="item"><b>教室复制</b><br><button class="miniBtn" onclick="copyNextClassroom()">复制下一节教室</button></div>
     `;
     document.getElementById('courses').innerHTML = dayCourses.length ? dayCourses.map(c=>`
       <div class="item course ${selectedCourseDay === today ? 'todayCourse' : ''}">
@@ -844,6 +939,13 @@
         <span class="badge">${c.place}</span>
       </div>
     `).join('') : '<div class="empty">这一天课表空空，可以安排复习、开黑或看班戟。</div>';
+  }
+
+  function copyNextClassroom(){
+    const next = nextCourseFor(selectedCourseOwner);
+    const text = next ? `${next.name} ${next.place}` : '今天没有下一节课';
+    if(navigator.clipboard) navigator.clipboard.writeText(text);
+    alert('已复制：' + text);
   }
 
   function dailyPick(options, salt){
@@ -891,13 +993,34 @@
   }
 
   function renderPhotos(){
-    document.getElementById('photoWall').innerHTML = photos.length ? photos.map(photo=>`
+    const categories = ['全部','班戟','三人','吃饭','王者','校园'];
+    document.getElementById('photoFilters').innerHTML = categories.map(cat=>`
+      <button class="tabBtn ${photoFilter === cat ? 'active' : ''}" onclick="setPhotoFilter('${cat}')">${cat}</button>
+    `).join('');
+    const shownPhotos = photoFilter === '全部' ? photos : photos.filter(photo => (photo.category || '班戟') === photoFilter);
+    document.getElementById('photoWall').innerHTML = shownPhotos.length ? shownPhotos.map(photo=>`
       <div class="photoCard">
-        <img src="${photo.image}" alt="${escapeHtml(photo.caption || '班戟照片')}">
-        <p class="small">${escapeHtml(photo.caption || '班戟的可爱瞬间')}</p>
+        <img src="${photo.image}" alt="${escapeHtml(photo.caption || '照片')}" onclick="openPhotoModal('${photo.id}')">
+        <p class="small"><b>${escapeHtml(photo.category || '班戟')}</b> · ${escapeHtml(photo.caption || '可爱瞬间')}</p>
         <button class="miniBtn" onclick="deletePhoto('${photo.id}')">删除</button>
       </div>
     `).join('') : '<div class="empty">还没有班戟照片，第一张必须隆重登场。</div>';
+  }
+
+  function setPhotoFilter(category){
+    photoFilter = category;
+    saveLocal(); renderPhotos();
+  }
+
+  function openPhotoModal(id){
+    const photo = photos.find(item => item.id === id);
+    if(!photo) return;
+    document.getElementById('modalPhoto').src = photo.image;
+    document.getElementById('photoModal').classList.add('open');
+  }
+
+  function closePhotoModal(){
+    document.getElementById('photoModal').classList.remove('open');
   }
 
   function renderMoods(){
@@ -908,6 +1031,11 @@
     document.getElementById('moodBoard').innerHTML = people.map(p=>`
       <div class="item"><b>${p.name}</b><br><span class="small">${moods[p.name] || '还没有签到'}</span></div>
     `).join('');
+    document.getElementById('moodHistory').innerHTML = Array.from({length:7},(_,i)=>{
+      const date = todayKey(i - 6);
+      const records = moodHistory.filter(item => item.date === date);
+      return `<div class="calendarCell"><b>${shortDate(date)}</b><br>${records.length ? records.map(r=>`${r.name}:${r.mood}`).join('<br>') : '空'}</div>`;
+    }).join('');
   }
 
   function renderCatStatus(){
@@ -935,9 +1063,10 @@
       <div class="item">
         <div class="messageTop">
           <b>${escapeHtml(v.name)}</b>
-          <button class="miniBtn" onclick="voteFood('${v.id}')">投票 ${v.count || 0}</button>
+          <button class="miniBtn" onclick="voteFood('${v.id}')">投票 ${(v.voters || []).length || v.count || 0}</button>
         </div>
-        <div class="voteBar"><span style="width:${((v.count || 0) / max) * 100}%"></span></div>
+        <div class="small">${(v.voters || []).length ? '已投：' + v.voters.join('、') : '还没人投'}</div>
+        <div class="voteBar"><span style="width:${(((v.voters || []).length || v.count || 0) / max) * 100}%"></span></div>
       </div>
     `).join('');
   }
@@ -952,6 +1081,16 @@
     renderGameRoom();
     renderFoodVotes();
     renderDinnerOptions();
+    renderCatDiary();
+    renderTodayPanel();
+  }
+
+  function renderCatDiary(){
+    document.getElementById('catDiary').innerHTML = Array.from({length:7},(_,i)=>{
+      const date = todayKey(i - 6);
+      const record = catDiary.find(item => item.date === date);
+      return `<div class="calendarCell"><b>${shortDate(date)}</b><br>${record ? escapeHtml(record.text) : '未记录'}</div>`;
+    }).join('');
   }
 
   function uploadAvatar(i,file){
@@ -999,6 +1138,7 @@
 
     document.getElementById('weatherUpdated').innerText =
       '更新时间：' + current.time.replace('T',' ') + ' · 数据来自 Open-Meteo';
+    document.getElementById('todayWeather').innerText = `${current.temperature_2m}°C · ${todayCode}`;
   }
 
   async function fetchWeather(){
@@ -1025,12 +1165,15 @@
 
   function setMood(person, mood){
     moods[person] = mood;
+    moodHistory = moodHistory.filter(item => !(item.date === todayKey() && item.name === person));
+    moodHistory.push({ date:todayKey(), name:person, mood });
+    moodHistory = moodHistory.slice(-80);
     save(); renderMoods();
   }
 
   function setCatStatus(status){
     catStatus = status;
-    save(); renderCatStatus();
+    save(); renderCatStatus(); renderTodayPanel();
   }
 
   function toggleGameOnline(name){
@@ -1053,14 +1196,17 @@
   function voteFood(id){
     const option = foodVotes.find(v => v.id === id);
     if(!option) return;
-    option.count = (option.count || 0) + 1;
+    const voter = document.getElementById('votePerson').value;
+    option.voters = Array.isArray(option.voters) ? option.voters : [];
+    if(!option.voters.includes(voter)) option.voters.push(voter);
+    option.count = option.voters.length;
     save(); renderFoodVotes();
   }
 
   function addVoteOption(){
     const input = document.getElementById('voteInput');
     if(!input.value.trim()) return;
-    foodVotes.push({ id: makeId('vote'), name: input.value.trim(), count:0 });
+    foodVotes.push({ id: makeId('vote'), name: input.value.trim(), count:0, voters:[] });
     input.value = '';
     save(); renderFoodVotes();
   }
@@ -1071,9 +1217,11 @@
       return;
     }
     const pick = dinnerOptions[Math.floor(Math.random()*dinnerOptions.length)];
+    lastDinner = pick;
     document.getElementById('dinnerResult').innerText = '今晚就吃：' + pick + '！';
     const mealHint = document.getElementById('mealHint');
     if(mealHint) mealHint.innerText = '命运刚刚抽到了：' + pick;
+    save(); renderTodayPanel();
   }
 
   function addMsg(){
@@ -1138,6 +1286,7 @@
       photos.unshift({
         id: makeId('photo'),
         image: reader.result,
+        category: document.getElementById('photoCategory').value,
         caption: captionInput.value.trim() || '班戟的可爱瞬间',
         createdAt: new Date().toISOString()
       });
@@ -1150,6 +1299,15 @@
   function deletePhoto(id){
     photos = photos.filter(photo => photo.id !== id);
     save(); renderPhotos();
+  }
+
+  function addCatDiary(){
+    const input = document.getElementById('catDiaryInput');
+    if(!input.value.trim()) return;
+    catDiary = catDiary.filter(item => item.date !== todayKey());
+    catDiary.push({ date:todayKey(), text:input.value.trim(), status:catStatus });
+    input.value = '';
+    save(); renderCatDiary();
   }
 
   function exportData(){
@@ -1176,9 +1334,12 @@
         if(data.moods && typeof data.moods === 'object') moods = data.moods;
         if(typeof data.catStatus === 'string') catStatus = data.catStatus;
         if(data.gameRoom && typeof data.gameRoom === 'object') gameRoom = data.gameRoom;
-        if(Array.isArray(data.foodVotes)) foodVotes = data.foodVotes;
+        if(Array.isArray(data.foodVotes)) foodVotes = data.foodVotes.map(v => ({ ...v, voters:Array.isArray(v.voters) ? v.voters : [] }));
         if(Array.isArray(data.dinnerOptions)) dinnerOptions = [...new Set([...data.dinnerOptions, ...defaultDinnerOptions])].slice(0, 30);
         if(data.profiles && typeof data.profiles === 'object') profiles = { ...profileDefault, ...data.profiles };
+        if(Array.isArray(data.moodHistory)) moodHistory = data.moodHistory;
+        if(Array.isArray(data.catDiary)) catDiary = data.catDiary;
+        if(typeof data.lastDinner === 'string') lastDinner = data.lastDinner;
         save(); renderPeople(); renderProfiles(); renderHoro(); renderMsg(); renderMemories(); renderPhotos(); renderInteractiveBoards();
         alert('宿舍数据导入成功！');
       } catch (error) {
