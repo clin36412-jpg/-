@@ -275,6 +275,14 @@
     <div class="pill">洪艺嘉 · 牛蕾晴 · 鲍炎岐 · 班戟</div>
     <h1>lala land</h1>
     <p class="sub">三个人和一只小猫的共享小站 · 课表 · 天气 · 开黑 · 照片墙 · 留言 · 今日吃什么</p>
+    <div class="row" style="max-width:520px;margin:14px auto 0;">
+      <select id="identitySelect" onchange="setIdentity(this.value)">
+        <option>牛蕾晴</option>
+        <option>洪艺嘉</option>
+        <option>鲍炎岐</option>
+      </select>
+      <span class="status" id="identityStatus"><span class="dot online"></span>当前身份：牛蕾晴</span>
+    </div>
   </header>
 
   <section class="todayPanel" id="todayPanel">
@@ -282,6 +290,22 @@
     <div class="todayTile"><b>天气</b><span id="todayWeather">读取中...</span></div>
     <div class="todayTile"><b>班戟</b><span id="todayCat">今天想贴贴</span></div>
     <div class="todayTile"><b>晚饭</b><span id="todayDinner">还没抽签</span></div>
+  </section>
+
+  <section class="card" id="catCare" style="margin-top:16px;">
+    <div class="title">🐾 班戟投喂/贴贴计数器</div>
+    <div class="count">
+      <div><span class="num" id="feedCount">0</span>投喂</div>
+      <div><span class="num" id="petCount">0</span>贴贴</div>
+      <div><span class="num" id="photoCount">0</span>拍照</div>
+      <div><span class="num" id="careTotal">0</span>宠爱值</div>
+    </div>
+    <div class="row" style="margin-top:12px;">
+      <button onclick="addCatCare('feed')">投喂 +1</button>
+      <button class="btn2" onclick="addCatCare('pet')">贴贴 +1</button>
+      <button class="btn3" onclick="addCatCare('photo')">拍照 +1</button>
+    </div>
+    <p class="small" id="carePeople">今天还没人宠爱班戟。</p>
   </section>
 
   <section class="grid three" id="people"></section>
@@ -430,6 +454,7 @@
       <span class="badge" id="fishTime">时间 20</span>
       <span class="badge" id="fishBest">最高 0</span>
     </div>
+    <div class="list" id="fishLeaderboard" style="margin-top:12px;"></div>
     <div class="row" style="margin-top:10px;">
       <button onclick="moveFishCat(-1)">← 左移</button>
       <button class="btn2" onclick="startFishGame()">开始游戏</button>
@@ -560,6 +585,7 @@
     timer:null,
     best:Number(localStorage.getItem('lalaFishBest_v1') || 0)
   };
+  let currentIdentity = localStorage.getItem('lalaIdentity_v1') || '牛蕾晴';
 
   const peopleDefault = [
     { name:'洪艺嘉', birthday:'8.8', sign:'狮子座', avatar:'🦁', score:92 },
@@ -592,6 +618,8 @@
   let moodHistory = JSON.parse(localStorage.getItem('lalaMoodHistory_v1') || '[]');
   let catStatus = localStorage.getItem('cuteCatStatus_v1') || '班戟今天想贴贴 🐾';
   let catDiary = JSON.parse(localStorage.getItem('lalaCatDiary_v1') || '[]');
+  let catCare = JSON.parse(localStorage.getItem('lalaCatCare_v1') || '[]');
+  let fishLeaderboard = JSON.parse(localStorage.getItem('lalaFishLeaderboard_v1') || '[]');
   let gameRoom = JSON.parse(localStorage.getItem('cuteGameRoom_v1') || JSON.stringify({
     '洪艺嘉': { online:false, role:'中路' },
     '牛蕾晴': { online:false, role:'发育路' },
@@ -720,7 +748,7 @@
   }
 
   function stateData(){
-    return { people, profiles, messages, memories, photos, moods, moodHistory, catStatus, catDiary, gameRoom, foodVotes, dinnerOptions, lastDinner };
+    return { people, profiles, messages, memories, photos, moods, moodHistory, catStatus, catDiary, catCare, gameRoom, foodVotes, dinnerOptions, lastDinner, fishLeaderboard };
   }
 
   function saveLocal(){
@@ -736,6 +764,9 @@
     localStorage.setItem('lalaMoodHistory_v1', JSON.stringify(moodHistory));
     localStorage.setItem('cuteCatStatus_v1', catStatus);
     localStorage.setItem('lalaCatDiary_v1', JSON.stringify(catDiary));
+    localStorage.setItem('lalaCatCare_v1', JSON.stringify(catCare));
+    localStorage.setItem('lalaFishLeaderboard_v1', JSON.stringify(fishLeaderboard));
+    localStorage.setItem('lalaIdentity_v1', currentIdentity);
     localStorage.setItem('cuteGameRoom_v1', JSON.stringify(gameRoom));
     localStorage.setItem('cuteFoodVotes_v1', JSON.stringify(foodVotes));
     localStorage.setItem('cuteDinnerOptions_v1', JSON.stringify(dinnerOptions));
@@ -774,12 +805,14 @@
     if(Array.isArray(data.moodHistory)) moodHistory = data.moodHistory;
     if(typeof data.catStatus === 'string') catStatus = data.catStatus;
     if(Array.isArray(data.catDiary)) catDiary = data.catDiary;
+    if(Array.isArray(data.catCare)) catCare = data.catCare;
     if(data.gameRoom && typeof data.gameRoom === 'object') gameRoom = data.gameRoom;
     if(Array.isArray(data.foodVotes)) foodVotes = data.foodVotes.map(v => ({ ...v, voters:Array.isArray(v.voters) ? v.voters : [] }));
     if(Array.isArray(data.dinnerOptions)) dinnerOptions = [...new Set([...data.dinnerOptions, ...defaultDinnerOptions])].slice(0, 30);
     if(typeof data.lastDinner === 'string') lastDinner = data.lastDinner;
+    if(Array.isArray(data.fishLeaderboard)) fishLeaderboard = data.fishLeaderboard;
     saveLocal();
-    renderPeople(); renderProfiles(); renderHoro(); renderMsg(); renderMemories(); renderPhotos(); renderInteractiveBoards(); renderTodayPanel();
+    renderIdentity(); renderPeople(); renderProfiles(); renderHoro(); renderMsg(); renderMemories(); renderPhotos(); renderInteractiveBoards(); renderTodayPanel();
     applyingRemote = false;
   }
 
@@ -880,11 +913,41 @@
 
   function renderTodayPanel(){
     const next = nextCourseFor(selectedCourseOwner);
+    const remaining = next ? courseCountdownText(next) : '';
     document.getElementById('todayNextCourse').innerHTML = next
-      ? `${selectedCourseOwner}<br>${escapeHtml(next.name)}<br>${escapeHtml(next.time)} · ${escapeHtml(next.place)}`
+      ? `${selectedCourseOwner}<br>${escapeHtml(next.name)}<br>${escapeHtml(next.time)} · ${escapeHtml(next.place)}<br>${remaining}`
       : `${selectedCourseOwner} 今天没有课`;
     document.getElementById('todayCat').innerText = catStatus;
     document.getElementById('todayDinner').innerText = lastDinner || '还没抽签';
+  }
+
+  function renderIdentity(){
+    document.getElementById('identitySelect').value = currentIdentity;
+    document.getElementById('identityStatus').lastChild.textContent = '当前身份：' + currentIdentity;
+    ['author','moodPerson','votePerson','profilePerson'].forEach(id => {
+      const el = document.getElementById(id);
+      if(el && [...el.options].some(option => option.value === currentIdentity || option.text === currentIdentity)) el.value = currentIdentity;
+    });
+  }
+
+  function setIdentity(name){
+    currentIdentity = name;
+    selectedCourseOwner = name;
+    saveLocal();
+    renderIdentity();
+    renderProfileEditor();
+    renderCourses();
+    renderMoods();
+    renderTodayPanel();
+  }
+
+  function courseCountdownText(course){
+    const start = parseStartMinutes(course.time);
+    const now = new Date();
+    const minutes = now.getHours() * 60 + now.getMinutes();
+    const diff = start - minutes;
+    if(diff > 0) return `距离上课还有 ${Math.floor(diff/60)}小时${diff%60}分`;
+    return '这节课已经开始或刚刚结束';
   }
 
   messages = normalizeMessages(messages);
@@ -920,6 +983,7 @@
   function renderProfiles(){
     const personSelect = document.getElementById('profilePerson');
     personSelect.innerHTML = people.map(p=>`<option>${p.name}</option>`).join('');
+    if(!personSelect.value) personSelect.value = currentIdentity;
     renderProfileEditor();
     document.getElementById('profileCards').innerHTML = people.map(p=>{
       const profile = profiles[p.name] || {};
@@ -973,7 +1037,7 @@
     document.getElementById('courseSummary').innerHTML = `
       <div class="item todayCourse"><b>今天｜${today}</b><br><span class="small">${todayCourses.length ? todayCourses.map(c=>c.name).join('、') : '今天没有课。'}</span></div>
       <div class="item"><b>当前查看｜${selectedCourseDay}</b><br><span class="small">${selectedCourseOwner} · ${dayCourses.length} 门课</span></div>
-      <div class="item"><b>下一节课</b><br><span class="small">${nextCourseFor(selectedCourseOwner) ? `${nextCourseFor(selectedCourseOwner).name} · ${nextCourseFor(selectedCourseOwner).time}` : '今天没有下一节课'}</span></div>
+      <div class="item"><b>下一节课</b><br><span class="small">${nextCourseFor(selectedCourseOwner) ? `${nextCourseFor(selectedCourseOwner).name} · ${nextCourseFor(selectedCourseOwner).time}<br>${courseCountdownText(nextCourseFor(selectedCourseOwner))}` : '今天没有下一节课'}</span></div>
       <div class="item"><b>教室复制</b><br><button class="miniBtn" onclick="copyNextClassroom()">复制下一节教室</button></div>
     `;
     document.getElementById('courses').innerHTML = dayCourses.length ? dayCourses.map(c=>`
@@ -1067,7 +1131,9 @@
   }
 
   function renderMoods(){
-    const person = document.getElementById('moodPerson').value;
+    const moodPerson = document.getElementById('moodPerson');
+    if(!moodPerson.value) moodPerson.value = currentIdentity;
+    const person = moodPerson.value;
     document.getElementById('moodOptions').innerHTML = moodChoices.map(choice=>`
       <button class="optionBtn ${moods[person] === choice ? 'active' : ''}" onclick="setMood('${person}','${choice}')">${choice}</button>
     `).join('');
@@ -1114,6 +1180,19 @@
     `).join('');
   }
 
+  function renderCatCare(){
+    const todays = catCare.filter(item => item.date === todayKey());
+    const feed = todays.filter(item => item.type === 'feed').length;
+    const pet = todays.filter(item => item.type === 'pet').length;
+    const photo = todays.filter(item => item.type === 'photo').length;
+    document.getElementById('feedCount').innerText = feed;
+    document.getElementById('petCount').innerText = pet;
+    document.getElementById('photoCount').innerText = photo;
+    document.getElementById('careTotal').innerText = feed + pet + photo;
+    const peopleText = todays.length ? [...new Set(todays.map(item => item.by))].join('、') + ' 今天宠爱了班戟。' : '今天还没人宠爱班戟。';
+    document.getElementById('carePeople').innerText = peopleText;
+  }
+
   function renderDinnerOptions(){
     return;
   }
@@ -1125,7 +1204,16 @@
     renderFoodVotes();
     renderDinnerOptions();
     renderCatDiary();
+    renderCatCare();
+    renderFishLeaderboard();
     renderTodayPanel();
+  }
+
+  function renderFishLeaderboard(){
+    const sorted = [...fishLeaderboard].sort((a,b) => b.score - a.score).slice(0,5);
+    document.getElementById('fishLeaderboard').innerHTML = sorted.length ? sorted.map((row,i)=>`
+      <div class="item"><b>${i+1}. ${escapeHtml(row.name)}</b><br><span class="small">${row.score} 分 · ${shortDate(row.date || todayKey())}</span></div>
+    `).join('') : '<div class="empty">还没有排行榜记录，第一名等你来拿。</div>';
   }
 
   function renderCatDiary(){
@@ -1214,6 +1302,12 @@
     save(); renderMoods();
   }
 
+  function addCatCare(type){
+    catCare.push({ id:makeId('care'), date:todayKey(), type, by:currentIdentity, createdAt:new Date().toISOString() });
+    catCare = catCare.slice(-200);
+    save(); renderCatCare();
+  }
+
   function setCatStatus(status){
     catStatus = status;
     save(); renderCatStatus(); renderTodayPanel();
@@ -1239,7 +1333,7 @@
   function voteFood(id){
     const option = foodVotes.find(v => v.id === id);
     if(!option) return;
-    const voter = document.getElementById('votePerson').value;
+    const voter = document.getElementById('votePerson').value || currentIdentity;
     option.voters = Array.isArray(option.voters) ? option.voters : [];
     if(!option.voters.includes(voter)) option.voters.push(voter);
     option.count = option.voters.length;
@@ -1366,8 +1460,15 @@
       fishGame.best = fishGame.score;
       localStorage.setItem('lalaFishBest_v1', String(fishGame.best));
     }
+    const existing = fishLeaderboard.find(row => row.name === currentIdentity);
+    if(!existing || fishGame.score > existing.score){
+      fishLeaderboard = fishLeaderboard.filter(row => row.name !== currentIdentity);
+      fishLeaderboard.push({ name:currentIdentity, score:fishGame.score, date:todayKey() });
+      save();
+    }
     document.getElementById('fishGameIntro').innerText = '本局得分：' + fishGame.score + '。班戟表示还可以再来一把。';
     updateFishHud();
+    renderFishLeaderboard();
     drawFishGame();
   }
 
@@ -1403,7 +1504,7 @@
 
   function addMsg(){
     const input = document.getElementById('msgInput');
-    const author = document.getElementById('author').value;
+    const author = currentIdentity || document.getElementById('author').value;
     if(!input.value.trim()) return;
     messages.unshift({
       id: makeId('msg'),
@@ -1465,6 +1566,7 @@
         image: reader.result,
         category: document.getElementById('photoCategory').value,
         caption: captionInput.value.trim() || '班戟的可爱瞬间',
+        by: currentIdentity,
         createdAt: new Date().toISOString()
       });
       captionInput.value = '';
@@ -1482,7 +1584,7 @@
     const input = document.getElementById('catDiaryInput');
     if(!input.value.trim()) return;
     catDiary = catDiary.filter(item => item.date !== todayKey());
-    catDiary.push({ date:todayKey(), text:input.value.trim(), status:catStatus });
+    catDiary.push({ date:todayKey(), text:input.value.trim(), status:catStatus, by:currentIdentity });
     input.value = '';
     save(); renderCatDiary();
   }
@@ -1516,6 +1618,8 @@
         if(data.profiles && typeof data.profiles === 'object') profiles = { ...profileDefault, ...data.profiles };
         if(Array.isArray(data.moodHistory)) moodHistory = data.moodHistory;
         if(Array.isArray(data.catDiary)) catDiary = data.catDiary;
+        if(Array.isArray(data.catCare)) catCare = data.catCare;
+        if(Array.isArray(data.fishLeaderboard)) fishLeaderboard = data.fishLeaderboard;
         if(typeof data.lastDinner === 'string') lastDinner = data.lastDinner;
         save(); renderPeople(); renderProfiles(); renderHoro(); renderMsg(); renderMemories(); renderPhotos(); renderInteractiveBoards();
         alert('宿舍数据导入成功！');
@@ -1550,6 +1654,12 @@
     }
   }
 
+  function refreshCourseCountdowns(){
+    renderTodayPanel();
+    renderCourses();
+  }
+
+  renderIdentity();
   renderPeople();
   renderProfiles();
   renderCourses();
@@ -1561,6 +1671,7 @@
   fetchWeather();
   countdown();
   setInterval(countdown,1000);
+  setInterval(refreshCourseCountdowns,60000);
   updateFishHud();
   drawFishGame();
   window.addEventListener('keydown', event => {
