@@ -32,19 +32,25 @@
         radial-gradient(circle at 84% 72%, #f2e6ff 0 16%, transparent 17%),
         linear-gradient(135deg, #fff9fd 0%, #effcff 34%, #f2fff4 66%, #fff7de 100%);
       min-height:100vh;
+      overflow-x:hidden;
     }
     .bg {
       position:fixed; inset:0; pointer-events:none; opacity:.35;
-      background-image:radial-gradient(#9ee6cf 2px, transparent 2px);
+      background-image:
+        linear-gradient(120deg, transparent 0 38%, rgba(255,255,255,.48) 42%, transparent 47%),
+        radial-gradient(#9ee6cf 2px, transparent 2px);
+      background-position:0 0, 0 0;
       background-size:34px 34px;
+      animation: bgDrift 18s linear infinite;
     }
     .wrap { max-width:1180px; margin:0 auto; padding:22px 16px 90px; position:relative; }
-    header { text-align:center; padding:22px 10px 18px; }
+    header { text-align:center; padding:22px 10px 18px; animation: riseIn .7s ease both; }
     .pill {
       display:inline-flex; gap:8px; align-items:center; padding:9px 16px;
       border:2px solid #bdeedd; border-radius:999px; background:#fff;
       box-shadow:0 8px 20px rgba(72,170,137,.13);
       font-weight:700; color:#3e8f7b;
+      animation: softFloat 4.5s ease-in-out infinite;
     }
     h1 {
       margin:18px 0 8px;
@@ -52,6 +58,7 @@
       line-height:1;
       color:#e84f88;
       text-shadow:3px 3px 0 #fff, 6px 6px 0 #c9f3e6;
+      animation: titlePop .8s cubic-bezier(.18,1.3,.35,1) both;
     }
     .sub { max-width:760px; margin:0 auto; line-height:1.75; color:#7d6070; }
     .grid { display:grid; gap:16px; align-items:start; }
@@ -68,12 +75,22 @@
       backdrop-filter: blur(12px);
       position:relative;
       overflow:hidden;
+      transform:translateY(0);
+      transition:transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+      animation: riseIn .55s ease both;
+    }
+    .card:hover {
+      transform:translateY(-4px);
+      border-color:#ffc1dc;
+      box-shadow:0 18px 46px rgba(72,170,137,.17), 0 8px 22px rgba(255,90,165,.10), inset 0 1px 0 rgba(255,255,255,.72);
     }
     .card:before{
       content:"";
       position:absolute; right:-35px; top:-35px; width:90px; height:90px;
       border-radius:50%; background:linear-gradient(135deg,#e5fff6,#fff2c7); opacity:.8;
+      transition:transform .35s ease;
     }
+    .card:hover:before { transform:scale(1.18) rotate(10deg); }
     .title {
       display:flex; align-items:center; gap:8px;
       font-size:20px; font-weight:900; margin-bottom:14px;
@@ -99,10 +116,11 @@
       border:0; border-radius:18px; background:linear-gradient(135deg,#ff7aa8,#ff9fcb); color:#fff;
       font-weight:900; padding:11px 14px; cursor:pointer;
       box-shadow:0 8px 18px rgba(255,90,165,.2);
-      transition:.15s transform, .15s background; margin:4px;
+      transition:.15s transform, .15s background, .15s box-shadow; margin:4px;
       font-family:inherit;
     }
     button:hover { transform:translateY(-2px); filter:saturate(1.08); }
+    button:active { transform:translateY(1px) scale(.98); }
     .btn2 { background:linear-gradient(135deg,#7c6ee6,#9f8cff); }
     .btn3 { background:linear-gradient(135deg,#ffcf4a,#ffb703); color:#6b4700; }
     .danger { background:#f05252; }
@@ -119,7 +137,9 @@
       display:flex; align-items:center; justify-content:center;
       text-align:center; padding:18px; font-size:22px; font-weight:900;
       color:#7a365d; line-height:1.5;
+      transition:transform .18s ease, border-color .18s ease;
     }
+    .bigText:hover { transform:scale(1.01); border-color:#ffb7d3; }
     .small { font-size:13px; color:#8b7180; line-height:1.7; }
     .weatherMeta {
       display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin:12px 0;
@@ -139,7 +159,9 @@
     .rankItem {
       display:grid; grid-template-columns:auto 1fr auto; gap:10px; align-items:center;
       background:#fff; border:1px solid #ffd4e8; border-radius:16px; padding:10px;
+      transition:transform .16s ease, box-shadow .16s ease;
     }
+    .rankItem:hover { transform:translateX(3px); box-shadow:0 8px 18px rgba(255,90,165,.10); }
     .rankNo {
       width:28px; height:28px; border-radius:10px;
       display:flex; align-items:center; justify-content:center;
@@ -177,8 +199,23 @@
     .courseControls { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
     .courseSummary { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:12px; }
     .courseSummary .item { min-height:76px; }
-    .todayPanel { display:grid; grid-template-columns:1.2fr repeat(3,1fr); gap:12px; margin-top:16px; }
-    .todayTile { background:linear-gradient(135deg,#fff,#f4fffb); border:1px solid #bdeedd; border-radius:20px; padding:14px; min-height:104px; }
+    .todayPanel {
+      display:grid; grid-template-columns:1.2fr repeat(3,1fr); gap:12px; margin-top:16px;
+      padding:14px; border-radius:30px;
+      background:rgba(255,255,255,.48); border:1px solid rgba(255,193,220,.75);
+      box-shadow:0 18px 44px rgba(140,200,255,.12);
+      animation: riseIn .65s ease .08s both;
+    }
+    .todayTile {
+      background:linear-gradient(135deg,#fff,#f4fffb); border:1px solid #bdeedd; border-radius:20px; padding:14px; min-height:104px;
+      transition:transform .18s ease, box-shadow .18s ease;
+      position:relative; overflow:hidden;
+    }
+    .todayTile:hover { transform:translateY(-3px); box-shadow:0 10px 22px rgba(72,170,137,.12); }
+    .todayTile:after {
+      content:""; position:absolute; inset:auto 12px 10px auto; width:34px; height:4px;
+      border-radius:999px; background:linear-gradient(90deg,#ff8fbd,#9ee6cf); opacity:.45;
+    }
     .todayTile b { display:block; color:#3e8f7b; margin-bottom:6px; }
     .bar { height:12px; background:#ffe0ef; border-radius:999px; overflow:hidden; margin:10px 0; }
     .bar span { display:block; height:100%; background:linear-gradient(90deg,#ff8fbd,#ff5aa5); border-radius:999px; }
@@ -191,7 +228,9 @@
     .item {
       background:#fff7fb; border:1px solid #ffd4e8;
       border-radius:18px; padding:12px; position:relative;
+      transition:transform .16s ease, background .16s ease;
     }
+    .item:hover { transform:translateY(-2px); background:#fff; }
     .course { display:flex; justify-content:space-between; gap:12px; align-items:center; }
     .badge {
       display:inline-block; padding:4px 9px; border-radius:999px;
@@ -213,6 +252,7 @@
       border:4px solid white;
       position:relative;
       box-shadow:0 12px 20px rgba(255,90,165,.18);
+      animation: catBob 3.4s ease-in-out infinite;
     }
     .cat:before,.cat:after{
       content:""; position:absolute; top:-20px; width:45px; height:45px;
@@ -226,6 +266,8 @@
     .count div { background:#fff; border-radius:18px; padding:12px 6px; text-align:center; border:2px solid #ffd4e8; }
     .num { display:block; font-size:28px; font-weight:1000; color:#ff5aa5; }
     .message { background:#fff; border-radius:20px; border:2px solid #ffd4e8; padding:13px; }
+    .message { animation: riseIn .35s ease both; transition:transform .16s ease, box-shadow .16s ease; }
+    .message:hover { transform:translateY(-2px); box-shadow:0 10px 22px rgba(255,90,165,.10); }
     .message.pinned { border-color:#ffb703; background:#fffaf0; }
     .msgName { font-weight:900; color:#d94f93; margin-bottom:5px; }
     .messageTop { display:flex; justify-content:space-between; gap:8px; align-items:flex-start; }
@@ -238,8 +280,12 @@
     .photoCard {
       background:#fff; border:2px solid #ffd4e8; border-radius:20px;
       overflow:hidden; position:relative;
+      transition:transform .18s ease, box-shadow .18s ease;
     }
+    .photoCard:hover { transform:translateY(-4px) rotate(-.4deg); box-shadow:0 12px 24px rgba(255,90,165,.14); }
     .photoCard img { width:100%; aspect-ratio:1/1; object-fit:cover; display:block; }
+    .photoCard img { transition:transform .35s ease; }
+    .photoCard:hover img { transform:scale(1.05); }
     .photoCard .small { padding:8px 10px; margin:0; }
     .photoModal {
       position:fixed; inset:0; z-index:40; display:none; align-items:center; justify-content:center;
@@ -284,6 +330,7 @@
       padding:8px; border-radius:24px; background:rgba(255,255,255,.92);
       border:2px solid #ffd4e8; box-shadow:0 14px 36px rgba(255,90,165,.22);
       backdrop-filter:blur(14px);
+      animation: navUp .55s ease both;
     }
     .bottomNav a {
       text-decoration:none; color:#8b7180; text-align:center; font-size:12px;
@@ -291,6 +338,55 @@
     }
     .bottomNav span { display:block; font-size:18px; line-height:1; margin-bottom:3px; }
     .bottomNav a:hover { background:#fff0f7; color:#d94f93; }
+    .bottomNav a.active { background:linear-gradient(135deg,#fff0f7,#e9fff7); color:#d94f93; box-shadow:inset 0 0 0 1px #ffd4e8; }
+    .sparkle {
+      position:fixed; z-index:80; pointer-events:none; width:8px; height:8px;
+      border-radius:50%; background:#ff8fbd;
+      box-shadow:0 0 0 4px rgba(255,143,189,.18);
+      animation:sparkle .72s ease-out forwards;
+    }
+    .toast {
+      position:fixed; left:50%; bottom:92px; transform:translateX(-50%) translateY(12px);
+      z-index:90; padding:10px 15px; border-radius:999px;
+      background:rgba(255,255,255,.95); border:1px solid #ffd4e8;
+      box-shadow:0 12px 28px rgba(255,90,165,.18);
+      color:#7a365d; font-weight:900; opacity:0; pointer-events:none;
+      transition:opacity .2s ease, transform .2s ease;
+    }
+    .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+    .reveal { opacity:0; transform:translateY(18px); }
+    .reveal.visible { opacity:1; transform:translateY(0); transition:opacity .55s ease, transform .55s ease; }
+    @keyframes riseIn {
+      from { opacity:0; transform:translateY(18px) scale(.98); }
+      to { opacity:1; transform:translateY(0) scale(1); }
+    }
+    @keyframes titlePop {
+      from { opacity:0; transform:translateY(10px) scale(.92); }
+      to { opacity:1; transform:translateY(0) scale(1); }
+    }
+    @keyframes softFloat {
+      0%,100% { transform:translateY(0); }
+      50% { transform:translateY(-5px); }
+    }
+    @keyframes catBob {
+      0%,100% { transform:translateY(0) rotate(-1deg); }
+      50% { transform:translateY(-6px) rotate(1deg); }
+    }
+    @keyframes bgDrift {
+      from { background-position:0 0, 0 0; }
+      to { background-position:220px 0, 34px 34px; }
+    }
+    @keyframes navUp {
+      from { opacity:0; transform:translateX(-50%) translateY(18px); }
+      to { opacity:1; transform:translateX(-50%) translateY(0); }
+    }
+    @keyframes sparkle {
+      0% { opacity:1; transform:translate(-50%,-50%) scale(.8); }
+      100% { opacity:0; transform:translate(var(--dx), var(--dy)) scale(.15); }
+    }
+    @media (prefers-reduced-motion: reduce){
+      *, *:before, *:after { animation:none !important; transition:none !important; scroll-behavior:auto !important; }
+    }
     footer { text-align:center; margin-top:24px; color:#9a7889; }
     @media (max-width:900px){
       .photoGrid { grid-template-columns:repeat(2,1fr); }
@@ -650,7 +746,7 @@
 </div>
 
 <nav class="bottomNav" aria-label="手机快捷导航">
-  <a href="#today"><span>⏳</span>今日</a>
+  <a href="#todayPanel"><span>⏳</span>今日</a>
   <a href="#life"><span>📚</span>课表</a>
   <a href="#outside"><span>🔥</span>热榜</a>
   <a href="#game"><span>🎮</span>开黑</a>
@@ -664,6 +760,7 @@
   <button class="nextPhoto" onclick="showAdjacentPhoto(1)">下一张</button>
   <img id="modalPhoto" alt="放大的照片">
 </div>
+<div class="toast" id="toast">已完成</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -1090,6 +1187,7 @@
     localStorage.setItem('lalaEditMode_v1', String(editMode));
     renderEditMode();
     renderMsg(); renderMemories(); renderPhotos();
+    showToast(editMode ? '编辑模式已打开' : '回到普通模式');
   }
 
   function toggleCollapse(button){
@@ -1177,7 +1275,7 @@
       role: document.getElementById('profileRole').value.trim(),
       motto: document.getElementById('profileMotto').value.trim()
     };
-    save(); renderProfiles();
+    save(); renderProfiles(); showToast('资料已保存');
   }
 
   function selectCourseOwner(owner){
@@ -1233,6 +1331,66 @@
 
   function randomItem(options){
     return options[Math.floor(Math.random() * options.length)];
+  }
+
+  function showToast(text){
+    const toast = document.getElementById('toast');
+    toast.innerText = text;
+    toast.classList.add('show');
+    clearTimeout(showToast.timer);
+    showToast.timer = setTimeout(() => toast.classList.remove('show'), 1600);
+  }
+
+  function sparkleAt(x, y){
+    for(let i=0; i<8; i++){
+      const sparkle = document.createElement('span');
+      sparkle.className = 'sparkle';
+      sparkle.style.left = x + 'px';
+      sparkle.style.top = y + 'px';
+      sparkle.style.setProperty('--dx', (Math.cos(i / 8 * Math.PI * 2) * (28 + Math.random() * 18)) + 'px');
+      sparkle.style.setProperty('--dy', (Math.sin(i / 8 * Math.PI * 2) * (28 + Math.random() * 18)) + 'px');
+      sparkle.style.background = ['#ff8fbd','#9ee6cf','#ffcf4a','#9f8cff'][i % 4];
+      document.body.appendChild(sparkle);
+      setTimeout(() => sparkle.remove(), 760);
+    }
+  }
+
+  function initMotion(){
+    document.addEventListener('click', event => {
+      const target = event.target.closest('button, .optionBtn, .quickLink, .bottomNav a, .photoCard img');
+      if(target) sparkleAt(event.clientX, event.clientY);
+    });
+
+    if(!('IntersectionObserver' in window)){
+      document.querySelectorAll('section').forEach(section => section.classList.add('visible'));
+      return;
+    }
+
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if(entry.isIntersecting) entry.target.classList.add('visible');
+      });
+    }, { threshold:.08 });
+
+    document.querySelectorAll('section').forEach((section, index) => {
+      section.classList.add('reveal');
+      section.style.transitionDelay = Math.min(index * 35, 220) + 'ms';
+      observer.observe(section);
+    });
+
+    const navLinks = [...document.querySelectorAll('.bottomNav a')];
+    const navTargets = navLinks
+      .map(link => ({ link, target:document.querySelector(link.getAttribute('href')) }))
+      .filter(item => item.target);
+    const setActiveNav = () => {
+      const current = navTargets.reduce((best, item) => {
+        const top = Math.abs(item.target.getBoundingClientRect().top - 90);
+        return !best || top < best.top ? { ...item, top } : best;
+      }, null);
+      navLinks.forEach(link => link.classList.toggle('active', current && link === current.link));
+    };
+    setActiveNav();
+    window.addEventListener('scroll', setActiveNav, { passive:true });
   }
 
   function searchUrl(site, keyword){
@@ -1571,7 +1729,7 @@
     }
   }
 
-  function pickMiniTheater(){
+  function pickMiniTheater(showFeedback=true){
     const names = people.map(p => p.name).sort(() => Math.random() - .5);
     const submittedScenes = theaterSubmissions.map(item => item.text).filter(Boolean);
     const story = randomItem([...submittedScenes, ...theaterScenes])
@@ -1580,6 +1738,7 @@
       .replace('{c}', names[2]);
     document.getElementById('miniTheater').innerHTML =
       `${escapeHtml(story)}<span>今日关键词：${escapeHtml(dailyPick(['离谱但合理','快乐满格','先笑再说','全员可爱','剧情反转','班戟认证'], 'theater'))}</span>`;
+    if(showFeedback) showToast('小剧场换好啦');
   }
 
   function renderTheaterSubmissions(){
@@ -1605,7 +1764,7 @@
     });
     theaterSubmissions = theaterSubmissions.slice(0,30);
     input.value = '';
-    save(); renderTheaterSubmissions(); pickMiniTheater();
+    save(); renderTheaterSubmissions(); pickMiniTheater(false); showToast('小剧场投稿成功');
   }
 
   function deleteTheaterSubmission(id){
@@ -1640,7 +1799,7 @@
     });
     hotComments = hotComments.slice(0,80);
     input.value = '';
-    save(); renderHotComments();
+    save(); renderHotComments(); showToast('吐槽已发送');
   }
 
   function deleteHotComment(id){
@@ -1680,17 +1839,19 @@
     const link = song.link ? `<a href="${song.link}" target="_blank" rel="noopener">${escapeHtml(song.title)}</a>` : escapeHtml(song.title);
     document.getElementById('luckyBgm').innerHTML =
       `${link}<br><span>${escapeHtml(songArtist(song))} · ${escapeHtml(mood)}</span>`;
+    if(!keepDaily) showToast('BGM 已换一首');
   }
 
-  function pickWeather(){ document.getElementById('weather').innerText = weatherTips[Math.floor(Math.random()*weatherTips.length)]; }
-  function pickHero(){ document.getElementById('gamePlan').innerText = '今晚王者身份：' + roles[Math.floor(Math.random()*roles.length)] + ' 🎮'; }
-  function pickActivity(){ document.getElementById('gamePlan').innerText = '今晚安排：' + activities[Math.floor(Math.random()*activities.length)] + ' ✨'; }
-  function pickKingLuck(){ document.getElementById('kingZone').innerText = kingLuck[Math.floor(Math.random()*kingLuck.length)]; }
+  function pickWeather(){ document.getElementById('weather').innerText = weatherTips[Math.floor(Math.random()*weatherTips.length)]; showToast('换了一条提醒'); }
+  function pickHero(){ document.getElementById('gamePlan').innerText = '今晚王者身份：' + roles[Math.floor(Math.random()*roles.length)] + ' 🎮'; showToast('位置已抽好'); }
+  function pickActivity(){ document.getElementById('gamePlan').innerText = '今晚安排：' + activities[Math.floor(Math.random()*activities.length)] + ' ✨'; showToast('今晚安排已刷新'); }
+  function pickKingLuck(){ document.getElementById('kingZone').innerText = kingLuck[Math.floor(Math.random()*kingLuck.length)]; showToast('王者运势已刷新'); }
   function pickHeroChallenge(){
     const hero = randomItem(heroes);
     const role = randomItem(['对抗路','打野','中路','发育路','游走']);
     const mission = randomItem(heroMissions);
     document.getElementById('kingZone').innerText = `随机英雄挑战：${role} ${hero}。附加任务：${mission}。`;
+    showToast('英雄挑战已生成');
   }
 
   function setMood(person, mood){
@@ -1705,11 +1866,13 @@
     catCare.push({ id:makeId('care'), date:todayKey(), type, by:currentIdentity, createdAt:new Date().toISOString() });
     catCare = catCare.slice(-200);
     save(); renderCatCare();
+    showToast(type === 'feed' ? '班戟收到投喂' : type === 'pet' ? '班戟收到贴贴' : '拍照记录 +1');
   }
 
   function setCatStatus(status){
     catStatus = status;
     save(); renderCatStatus(); renderTodayPanel();
+    showToast('班戟心情已更新');
   }
 
   function toggleGameOnline(name){
@@ -1726,7 +1889,7 @@
       gameRoom[p.name].role = shuffled[i % shuffled.length];
     });
     document.getElementById('kingZone').innerText = '今晚位置已随机分配，先别抢位置。';
-    save(); renderGameRoom();
+    save(); renderGameRoom(); showToast('位置分配好了');
   }
 
   function voteFood(id){
@@ -1736,7 +1899,7 @@
     option.voters = Array.isArray(option.voters) ? option.voters : [];
     if(!option.voters.includes(voter)) option.voters.push(voter);
     option.count = option.voters.length;
-    save(); renderFoodVotes();
+    save(); renderFoodVotes(); showToast('投票成功');
   }
 
   function addVoteOption(){
@@ -1744,7 +1907,7 @@
     if(!input.value.trim()) return;
     foodVotes.push({ id: makeId('vote'), name: input.value.trim(), count:0, voters:[] });
     input.value = '';
-    save(); renderFoodVotes();
+    save(); renderFoodVotes(); showToast('选项已添加');
   }
 
   function drawDinner(){
@@ -1757,7 +1920,7 @@
     document.getElementById('dinnerResult').innerText = '今晚就吃：' + pick + '！';
     const mealHint = document.getElementById('mealHint');
     if(mealHint) mealHint.innerText = '命运刚刚抽到了：' + pick;
-    save(); renderTodayPanel();
+    save(); renderTodayPanel(); showToast('今晚就吃 ' + pick);
   }
 
   function fishCanvas(){
@@ -1950,28 +2113,28 @@
       createdAt: new Date().toISOString()
     });
     input.value='';
-    save(); renderMsg();
+    save(); renderMsg(); showToast('留言发布成功');
   }
 
   function likeMsg(id){
     const message = messages.find(m => m.id === id);
     if(!message) return;
     message.likes = (message.likes || 0) + 1;
-    save(); renderMsg();
+    save(); renderMsg(); showToast('已点赞');
   }
 
   function togglePinMsg(id){
     const message = messages.find(m => m.id === id);
     if(!message) return;
     message.pinned = !message.pinned;
-    save(); renderMsg();
+    save(); renderMsg(); showToast(message.pinned ? '已置顶' : '已取消置顶');
   }
 
   function deleteMsg(id){
     const message = messages.find(m => m.id === id);
     if(message && message.author !== currentIdentity) return alert('只能删除自己发的留言。');
     messages = messages.filter(m => m.id !== id);
-    save(); renderMsg();
+    save(); renderMsg(); showToast('留言已删除');
   }
 
   function clearMessages(){
@@ -1985,12 +2148,12 @@
     if(!input.value.trim()) return;
     memories.unshift(input.value.trim());
     input.value='';
-    save(); renderMemories();
+    save(); renderMemories(); showToast('回忆已加入');
   }
 
   function deleteMemory(i){
     memories.splice(i,1);
-    save(); renderMemories();
+    save(); renderMemories(); showToast('回忆已删除');
   }
 
   function uploadPhoto(file){
@@ -2007,7 +2170,7 @@
         createdAt: new Date().toISOString()
       });
       captionInput.value = '';
-      save(); renderPhotos();
+      save(); renderPhotos(); showToast('照片上传成功');
     };
     reader.readAsDataURL(file);
   }
@@ -2016,7 +2179,7 @@
     const photo = photos.find(item => item.id === id);
     if(photo && photo.by !== currentIdentity) return alert('只能删除自己上传的照片。');
     photos = photos.filter(photo => photo.id !== id);
-    save(); renderPhotos();
+    save(); renderPhotos(); showToast('照片已删除');
   }
 
   function addCatDiary(){
@@ -2025,7 +2188,7 @@
     catDiary = catDiary.filter(item => item.date !== todayKey());
     catDiary.push({ date:todayKey(), text:input.value.trim(), status:catStatus, by:currentIdentity });
     input.value = '';
-    save(); renderCatDiary();
+    save(); renderCatDiary(); showToast('班戟日历已记录');
   }
 
   function exportData(){
@@ -2110,7 +2273,8 @@
   renderMemories();
   renderPhotos();
   renderInteractiveBoards();
-  pickMiniTheater();
+  initMotion();
+  pickMiniTheater(false);
   pickLuckyBgm(true);
   fetchHotTrends();
   fetchMusicChart();
