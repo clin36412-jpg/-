@@ -109,6 +109,10 @@
     .toolbar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:12px; }
     .toolbar button, .toolbar label { flex:0 1 auto; }
     .hiddenInput { display:none; }
+    body:not(.edit-mode) .editOnly { display:none !important; }
+    .collapsible .collapseBody { display:block; }
+    .collapsible.collapsed .collapseBody { display:none; }
+    .title button { margin-left:auto; }
     .bigText {
       min-height:96px; border-radius:24px; background:linear-gradient(135deg,#fff6fb,#f2fff8);
       border:2px dashed #bdeedd;
@@ -216,6 +220,8 @@
     .photoModal.open { display:flex; }
     .photoModal img { max-width:min(920px, 96vw); max-height:82vh; border-radius:18px; background:#fff; }
     .photoModal button { position:fixed; top:18px; right:18px; }
+    .photoModal .prevPhoto { left:18px; right:auto; top:50%; }
+    .photoModal .nextPhoto { right:18px; top:50%; }
     .chiikawa {
       width:100%; max-height:170px; object-fit:contain; border-radius:22px;
       background:#fff; border:2px solid #ffd4e8; padding:8px;
@@ -282,6 +288,7 @@
         <option>鲍炎岐</option>
       </select>
       <span class="status" id="identityStatus"><span class="dot online"></span>当前身份：牛蕾晴</span>
+      <button id="editModeBtn" onclick="toggleEditMode()">进入编辑模式</button>
     </div>
   </header>
 
@@ -323,7 +330,7 @@
     </div>
     <div class="row" style="margin-top:10px;">
       <input id="profileMotto" placeholder="今日宣言 / 个性签名" />
-      <button onclick="saveProfile()">保存资料</button>
+      <button class="editOnly" onclick="saveProfile()">保存资料</button>
     </div>
     <div class="grid three" id="profileCards" style="margin-top:14px;"></div>
   </section>
@@ -428,8 +435,9 @@
       <p class="small">乳色小猫永远是宿舍编外成员。</p>
     </div>
 
-    <div class="card">
-      <div class="title">🥤 奶茶外卖投票</div>
+    <div class="card collapsible">
+      <div class="title">🥤 奶茶外卖投票 <button class="miniBtn" onclick="toggleCollapse(this)">收起</button></div>
+      <div class="collapseBody">
       <select id="votePerson">
         <option>洪艺嘉</option>
         <option>牛蕾晴</option>
@@ -437,8 +445,9 @@
       </select>
       <div class="list" id="foodVotes"></div>
       <div class="row" style="margin-top:10px;">
-        <input id="voteInput" placeholder="新增选项，比如：麻辣烫、霸王茶姬" onkeydown="if(event.key==='Enter') addVoteOption()" />
-        <button onclick="addVoteOption()">添加</button>
+        <input class="editOnly" id="voteInput" placeholder="新增选项，比如：麻辣烫、霸王茶姬" onkeydown="if(event.key==='Enter') addVoteOption()" />
+        <button class="editOnly" onclick="addVoteOption()">添加</button>
+      </div>
       </div>
     </div>
   </section>
@@ -476,15 +485,15 @@
     <div class="card">
       <div class="title">📸 班戟照片墙</div>
       <div class="row">
-        <select id="photoCategory">
+        <select class="editOnly" id="photoCategory">
           <option>班戟</option>
           <option>三人</option>
           <option>吃饭</option>
           <option>王者</option>
           <option>校园</option>
         </select>
-        <input id="photoCaption" placeholder="照片说明，比如：班戟今日营业" />
-        <label class="upload">上传照片
+        <input class="editOnly" id="photoCaption" placeholder="照片说明，比如：班戟今日营业" />
+        <label class="upload editOnly">上传照片
           <input type="file" accept="image/*" onchange="uploadPhoto(this.files[0]); this.value=''">
         </label>
       </div>
@@ -502,7 +511,7 @@
 
   <section class="card" id="memories" style="margin-top:16px;">
     <div class="title">📸 宿舍回忆时间线</div>
-    <div class="row">
+    <div class="row editOnly">
       <input id="memoryInput" placeholder="新增一条回忆，比如：一起拍了班戟的绝美照片" onkeydown="if(event.key==='Enter') addMemory()" />
       <button onclick="addMemory()">加入时间线</button>
     </div>
@@ -511,7 +520,7 @@
 
   <section class="card" id="catCalendar" style="margin-top:16px;">
     <div class="title">🐾 班戟日历</div>
-    <div class="row">
+    <div class="row editOnly">
       <input id="catDiaryInput" placeholder="记录今天的班戟：比如 睡了一下午但很可爱" onkeydown="if(event.key==='Enter') addCatDiary()" />
       <button onclick="addCatDiary()">记录今天</button>
     </div>
@@ -531,7 +540,7 @@
       <button onclick="addMsg()">发布</button>
     </div>
     <div class="grid three" id="messages" style="margin-top:14px;"></div>
-    <div class="toolbar">
+    <div class="toolbar editOnly">
       <button class="btn2" onclick="exportData()">导出宿舍数据</button>
       <label class="upload">导入宿舍数据
         <input type="file" class="hiddenInput" accept="application/json" onchange="importData(this.files[0]); this.value=''">
@@ -559,8 +568,10 @@
   <a href="#messagesSection"><span>💌</span>留言</a>
 </nav>
 
-<div class="photoModal" id="photoModal" onclick="closePhotoModal()">
+<div class="photoModal" id="photoModal">
+  <button class="prevPhoto" onclick="showAdjacentPhoto(-1)">上一张</button>
   <button onclick="closePhotoModal()">关闭</button>
+  <button class="nextPhoto" onclick="showAdjacentPhoto(1)">下一张</button>
   <img id="modalPhoto" alt="放大的照片">
 </div>
 
@@ -574,12 +585,16 @@
   let cloudReady = false;
   let applyingRemote = false;
   let cloudSaveTimer = null;
+  let editMode = localStorage.getItem('lalaEditMode_v1') === 'true';
+  let activePhotoId = null;
   let fishGame = {
     running:false,
     score:0,
     time:20,
     catX:360,
     fish:[],
+    bombs:[],
+    combo:0,
     lastSpawn:0,
     lastTick:0,
     timer:null,
@@ -930,6 +945,24 @@
     });
   }
 
+  function renderEditMode(){
+    document.body.classList.toggle('edit-mode', editMode);
+    document.getElementById('editModeBtn').innerText = editMode ? '退出编辑模式' : '进入编辑模式';
+  }
+
+  function toggleEditMode(){
+    editMode = !editMode;
+    localStorage.setItem('lalaEditMode_v1', String(editMode));
+    renderEditMode();
+    renderMsg(); renderMemories(); renderPhotos();
+  }
+
+  function toggleCollapse(button){
+    const card = button.closest('.collapsible');
+    card.classList.toggle('collapsed');
+    button.innerText = card.classList.contains('collapsed') ? '展开' : '收起';
+  }
+
   function setIdentity(name){
     currentIdentity = name;
     selectedCourseOwner = name;
@@ -971,7 +1004,8 @@
 
   function renderProfileEditor(){
     const select = document.getElementById('profilePerson');
-    if(!select.value) select.value = people[0]?.name || '洪艺嘉';
+    select.value = currentIdentity;
+    select.disabled = true;
     const profile = profiles[select.value] || profileDefault[select.value] || {};
     document.getElementById('profileNickname').value = profile.nickname || '';
     document.getElementById('profileMbti').value = profile.mbti || '';
@@ -1081,8 +1115,8 @@
           <div class="msgName">${m.pinned ? '📌 ' : ''}${escapeHtml(m.author)}</div>
           <div class="messageActions">
             <button class="miniBtn" onclick="likeMsg('${m.id}')">♡ ${m.likes || 0}</button>
-            <button class="miniBtn" onclick="togglePinMsg('${m.id}')">${m.pinned ? '取消置顶' : '置顶'}</button>
-            <button class="miniBtn" onclick="deleteMsg('${m.id}')">删除</button>
+            <button class="miniBtn editOnly" onclick="togglePinMsg('${m.id}')">${m.pinned ? '取消置顶' : '置顶'}</button>
+            ${m.author === currentIdentity ? `<button class="miniBtn editOnly" onclick="deleteMsg('${m.id}')">删除</button>` : ''}
           </div>
         </div>
         <div>${escapeHtml(m.text)}</div>
@@ -1094,7 +1128,7 @@
     document.getElementById('timeline').innerHTML = memories.map((memory,i)=>`
       <div class="item">
         ${escapeHtml(memory)}
-        <button class="miniBtn" onclick="deleteMemory(${i})">删除</button>
+        <button class="miniBtn editOnly" onclick="deleteMemory(${i})">删除</button>
       </div>
     `).join('');
   }
@@ -1104,12 +1138,12 @@
     document.getElementById('photoFilters').innerHTML = categories.map(cat=>`
       <button class="tabBtn ${photoFilter === cat ? 'active' : ''}" onclick="setPhotoFilter('${cat}')">${cat}</button>
     `).join('');
-    const shownPhotos = photoFilter === '全部' ? photos : photos.filter(photo => (photo.category || '班戟') === photoFilter);
-    document.getElementById('photoWall').innerHTML = shownPhotos.length ? shownPhotos.map(photo=>`
+    const visiblePhotos = shownPhotos();
+    document.getElementById('photoWall').innerHTML = visiblePhotos.length ? visiblePhotos.map(photo=>`
       <div class="photoCard">
         <img src="${photo.image}" alt="${escapeHtml(photo.caption || '照片')}" onclick="openPhotoModal('${photo.id}')">
         <p class="small"><b>${escapeHtml(photo.category || '班戟')}</b> · ${escapeHtml(photo.caption || '可爱瞬间')}</p>
-        <button class="miniBtn" onclick="deletePhoto('${photo.id}')">删除</button>
+        ${photo.by === currentIdentity ? `<button class="miniBtn editOnly" onclick="deletePhoto('${photo.id}')">删除</button>` : ''}
       </div>
     `).join('') : '<div class="empty">还没有班戟照片，第一张必须隆重登场。</div>';
   }
@@ -1122,12 +1156,25 @@
   function openPhotoModal(id){
     const photo = photos.find(item => item.id === id);
     if(!photo) return;
+    activePhotoId = id;
     document.getElementById('modalPhoto').src = photo.image;
     document.getElementById('photoModal').classList.add('open');
   }
 
   function closePhotoModal(){
     document.getElementById('photoModal').classList.remove('open');
+  }
+
+  function shownPhotos(){
+    return photoFilter === '全部' ? photos : photos.filter(photo => (photo.category || '班戟') === photoFilter);
+  }
+
+  function showAdjacentPhoto(direction){
+    const list = shownPhotos();
+    if(!list.length) return;
+    const index = Math.max(0, list.findIndex(photo => photo.id === activePhotoId));
+    const next = list[(index + direction + list.length) % list.length];
+    openPhotoModal(next.id);
   }
 
   function renderMoods(){
@@ -1406,6 +1453,21 @@
       ctx.restore();
     });
 
+    fishGame.bombs.forEach(bomb => {
+      ctx.save();
+      ctx.translate(bomb.x, bomb.y);
+      ctx.fillStyle = '#51475d';
+      ctx.beginPath();
+      ctx.arc(0,0,12,0,Math.PI*2);
+      ctx.fill();
+      ctx.strokeStyle = '#ffcf4a';
+      ctx.beginPath();
+      ctx.moveTo(7,-9);
+      ctx.lineTo(16,-18);
+      ctx.stroke();
+      ctx.restore();
+    });
+
     ctx.fillStyle = '#fff3dc';
     ctx.strokeStyle = '#42515a';
     ctx.lineWidth = 3;
@@ -1429,7 +1491,7 @@
   }
 
   function updateFishHud(){
-    document.getElementById('fishScore').innerText = '分数 ' + fishGame.score;
+    document.getElementById('fishScore').innerText = '分数 ' + fishGame.score + ' · combo ' + fishGame.combo;
     document.getElementById('fishTime').innerText = '时间 ' + fishGame.time;
     document.getElementById('fishBest').innerText = '最高 ' + fishGame.best;
   }
@@ -1439,6 +1501,8 @@
     fishGame.score = 0;
     fishGame.time = 20;
     fishGame.fish = [];
+    fishGame.bombs = [];
+    fishGame.combo = 0;
     fishGame.lastSpawn = 0;
     fishGame.lastTick = performance.now();
     fishGame.catX = fishCanvas().width / 2;
@@ -1483,13 +1547,32 @@
         speed: 1.8 + Math.random() * 2.2,
         color: ['#ff7aa8','#7c6ee6','#3e8f7b','#ffb703'][Math.floor(Math.random()*4)]
       });
+      if(Math.random() < .28){
+        fishGame.bombs.push({
+          x: 32 + Math.random() * (fishCanvas().width - 64),
+          y: -20,
+          speed: 2.1 + Math.random() * 2.3
+        });
+      }
       fishGame.lastSpawn = now;
     }
     fishGame.fish.forEach(fish => fish.y += fish.speed * delta / 16);
+    fishGame.bombs.forEach(bomb => bomb.y += bomb.speed * delta / 16);
     fishGame.fish = fishGame.fish.filter(fish => {
       const caught = fish.y > fishCanvas().height - 62 && Math.abs(fish.x - fishGame.catX) < 54;
-      if(caught) fishGame.score += 1;
+      if(caught){
+        fishGame.combo += 1;
+        fishGame.score += 1 + Math.floor(fishGame.combo / 5);
+      }
       return !caught && fish.y < fishCanvas().height + 30;
+    });
+    fishGame.bombs = fishGame.bombs.filter(bomb => {
+      const hit = bomb.y > fishCanvas().height - 62 && Math.abs(bomb.x - fishGame.catX) < 54;
+      if(hit){
+        fishGame.combo = 0;
+        fishGame.score = Math.max(0, fishGame.score - 2);
+      }
+      return !hit && bomb.y < fishCanvas().height + 30;
     });
     updateFishHud();
     drawFishGame();
@@ -1533,6 +1616,8 @@
   }
 
   function deleteMsg(id){
+    const message = messages.find(m => m.id === id);
+    if(message && message.author !== currentIdentity) return alert('只能删除自己发的留言。');
     messages = messages.filter(m => m.id !== id);
     save(); renderMsg();
   }
@@ -1576,6 +1661,8 @@
   }
 
   function deletePhoto(id){
+    const photo = photos.find(item => item.id === id);
+    if(photo && photo.by !== currentIdentity) return alert('只能删除自己上传的照片。');
     photos = photos.filter(photo => photo.id !== id);
     save(); renderPhotos();
   }
@@ -1660,6 +1747,7 @@
   }
 
   renderIdentity();
+  renderEditMode();
   renderPeople();
   renderProfiles();
   renderCourses();
