@@ -17,13 +17,29 @@
       --mint:#9ee6cf;
       --sky:#dff3ff;
     }
+    body.theme-chiikawa {
+      --pink:#ff9fcb; --hot:#ff6ba8; --text:#51475d; --card:rgba(255,255,255,.9);
+      --mint:#d7f7ff; --sky:#eef8ff;
+    }
+    body.theme-cat {
+      --pink:#f4b6a6; --hot:#d97757; --text:#4f463c; --card:rgba(255,252,246,.92);
+      --mint:#ffe6ba; --sky:#fff6df;
+    }
+    body.theme-king {
+      --pink:#7c6ee6; --hot:#5b4bd8; --text:#34324d; --card:rgba(255,255,255,.9);
+      --mint:#d7d2ff; --sky:#eef0ff;
+    }
+    body.theme-exam {
+      --pink:#7aa7ff; --hot:#4776d7; --text:#384657; --card:rgba(255,255,255,.91);
+      --mint:#dcecff; --sky:#f3f8ff;
+    }
     body {
       margin:0;
       font-family: "Comic Sans MS", "PingFang SC", "Microsoft YaHei", sans-serif;
       color:var(--text);
       background:
-        radial-gradient(circle at 10% 10%, #dff3ff 0 18%, transparent 19%),
-        radial-gradient(circle at 90% 0%, #e5fff6 0 22%, transparent 23%),
+        radial-gradient(circle at 10% 10%, var(--sky) 0 18%, transparent 19%),
+        radial-gradient(circle at 90% 0%, var(--mint) 0 22%, transparent 23%),
         linear-gradient(135deg, #fff9fd 0%, #f0fff8 48%, #fffbea 100%);
       min-height:100vh;
     }
@@ -142,6 +158,11 @@
     .todayPanel { display:grid; grid-template-columns:1.2fr repeat(3,1fr); gap:12px; margin-top:16px; }
     .todayTile { background:#fff; border:1px solid #bdeedd; border-radius:20px; padding:14px; min-height:104px; }
     .todayTile b { display:block; color:#3e8f7b; margin-bottom:6px; }
+    .themeBar { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-top:14px; }
+    .themeBar button { margin:0; padding:8px 11px; border-radius:999px; box-shadow:none; background:#fff; color:#3e8f7b; border:1px solid #bdeedd; }
+    .themeBar button.active { background:var(--hot); color:#fff; border-color:var(--hot); }
+    .viewPage { display:none; }
+    .viewPage.active { display:block; }
     .bar { height:12px; background:#ffe0ef; border-radius:999px; overflow:hidden; margin:10px 0; }
     .bar span { display:block; height:100%; background:linear-gradient(90deg,#ff8fbd,#ff5aa5); border-radius:999px; }
     input, select {
@@ -244,6 +265,7 @@
     }
     .bottomNav span { display:block; font-size:18px; line-height:1; margin-bottom:3px; }
     .bottomNav a:hover { background:#fff0f7; color:#d94f93; }
+    .bottomNav a.active { background:#e5fff6; color:#3e8f7b; }
     footer { text-align:center; margin-top:24px; color:#9a7889; }
     @media (max-width:900px){
       .photoGrid { grid-template-columns:repeat(2,1fr); }
@@ -262,8 +284,11 @@
     <div class="pill">洪艺嘉 · 牛蕾晴 · 鲍炎岐 · 班戟</div>
     <h1>lala land</h1>
     <p class="sub">三个人和一只小猫的共享小站 · 课表 · 天气 · 开黑 · 照片墙 · 留言 · 今日吃什么</p>
+    <div class="themeBar" id="themeBar"></div>
   </header>
 
+  <main id="appViews">
+  <div class="viewPage active" id="view-today">
   <section class="todayPanel" id="todayPanel">
     <div class="todayTile"><b>今日课程</b><span id="todayNextCourse">正在计算下一节课...</span></div>
     <div class="todayTile"><b>天气</b><span id="todayWeather">读取中...</span></div>
@@ -310,7 +335,9 @@
       <p class="small">班戟 6 月 7 日要离开宿舍，要多拍照、多摸摸、多留念。</p>
     </div>
   </section>
+  </div>
 
+  <div class="viewPage" id="view-life">
   <section class="grid three" id="life" style="margin-top:16px;">
     <div class="card">
       <div class="title">🌤️ 南京栖霞区 · 明日天气</div>
@@ -333,15 +360,6 @@
       <div class="courseSummary" id="courseSummary"></div>
       <div class="list" id="courses"></div>
       <p class="small">选择舍友和星期查看课表，默认显示今天，不再把整周堆成长列表。</p>
-    </div>
-
-    <div class="card">
-      <div class="title">🎮 王者荣耀宿舍开黑</div>
-      <div class="bigText" id="gamePlan">今晚三排？快乐就完事！</div>
-      <div class="row">
-        <button onclick="pickHero()">随机位置</button>
-        <button class="btn2" onclick="pickActivity()">今晚安排</button>
-      </div>
     </div>
   </section>
 
@@ -370,8 +388,19 @@
       <button onclick="drawDinner()">直接抽一个</button>
     </div>
   </section>
+  </div>
 
+  <div class="viewPage" id="view-game">
   <section class="grid three" id="game" style="margin-top:16px;">
+    <div class="card">
+      <div class="title">🎮 王者荣耀宿舍开黑</div>
+      <div class="bigText" id="gamePlan">今晚三排？快乐就完事！</div>
+      <div class="row">
+        <button onclick="pickHero()">随机位置</button>
+        <button class="btn2" onclick="pickActivity()">今晚安排</button>
+      </div>
+    </div>
+
     <div class="card">
       <div class="title">🎮 王者开黑房间</div>
       <div class="bigText" id="kingZone">今日开黑关键词：别压力队友 ✨</div>
@@ -414,7 +443,9 @@
     </div>
     <p class="small">候选池已内置 30 个，页面不展开显示，直接抽就好。</p>
   </section>
+  </div>
 
+  <div class="viewPage" id="view-album">
   <section class="grid two" id="album" style="margin-top:16px;">
     <div class="card">
       <div class="title">📸 班戟照片墙</div>
@@ -460,7 +491,9 @@
     </div>
     <div class="calendarGrid" id="catDiary"></div>
   </section>
+  </div>
 
+  <div class="viewPage" id="view-messages">
   <section class="card" id="messagesSection" style="margin-top:16px;">
     <div class="title">💌 宿舍留言墙</div>
     <div class="row">
@@ -490,16 +523,18 @@
     <div class="status" id="cloudStatus"><span class="dot"></span>本地模式：还没有连接云端同步</div>
     <button onclick="copyTip()">复制分享文案</button>
   </section>
+  </div>
+  </main>
 
   <footer>Made for 洪艺嘉 · 牛蕾晴 · 鲍炎岐 · 班戟 🎀</footer>
 </div>
 
 <nav class="bottomNav" aria-label="手机快捷导航">
-  <a href="#today"><span>⏳</span>今日</a>
-  <a href="#life"><span>📚</span>课表</a>
-  <a href="#game"><span>🎮</span>开黑</a>
-  <a href="#album"><span>🐾</span>照片</a>
-  <a href="#messagesSection"><span>💌</span>留言</a>
+  <a href="#today" data-view="today" class="active" onclick="switchView('today')"><span>⏳</span>今日</a>
+  <a href="#life" data-view="life" onclick="switchView('life')"><span>📚</span>课表</a>
+  <a href="#game" data-view="game" onclick="switchView('game')"><span>🎮</span>开黑</a>
+  <a href="#album" data-view="album" onclick="switchView('album')"><span>🐾</span>照片</a>
+  <a href="#messages" data-view="messages" onclick="switchView('messages')"><span>💌</span>留言</a>
 </nav>
 
 <div class="photoModal" id="photoModal" onclick="closePhotoModal()">
@@ -517,6 +552,15 @@
   let cloudReady = false;
   let applyingRemote = false;
   let cloudSaveTimer = null;
+  let activeView = localStorage.getItem('lalaActiveView_v1') || 'today';
+  let activeTheme = localStorage.getItem('lalaTheme_v1') || 'lala';
+  const themes = [
+    { id:'lala', label:'lala' },
+    { id:'chiikawa', label:'Chiikawa' },
+    { id:'cat', label:'班戟' },
+    { id:'king', label:'王者' },
+    { id:'exam', label:'考试周' }
+  ];
 
   const peopleDefault = [
     { name:'洪艺嘉', birthday:'8.8', sign:'狮子座', avatar:'🦁', score:92 },
@@ -677,7 +721,7 @@
   }
 
   function stateData(){
-    return { people, profiles, messages, memories, photos, moods, moodHistory, catStatus, catDiary, gameRoom, foodVotes, dinnerOptions, lastDinner };
+    return { people, profiles, messages, memories, photos, moods, moodHistory, catStatus, catDiary, gameRoom, foodVotes, dinnerOptions, lastDinner, activeTheme };
   }
 
   function saveLocal(){
@@ -697,6 +741,8 @@
     localStorage.setItem('cuteFoodVotes_v1', JSON.stringify(foodVotes));
     localStorage.setItem('cuteDinnerOptions_v1', JSON.stringify(dinnerOptions));
     localStorage.setItem('lalaLastDinner_v1', lastDinner);
+    localStorage.setItem('lalaTheme_v1', activeTheme);
+    localStorage.setItem('lalaActiveView_v1', activeView);
   }
 
   function save(){
@@ -735,7 +781,9 @@
     if(Array.isArray(data.foodVotes)) foodVotes = data.foodVotes.map(v => ({ ...v, voters:Array.isArray(v.voters) ? v.voters : [] }));
     if(Array.isArray(data.dinnerOptions)) dinnerOptions = [...new Set([...data.dinnerOptions, ...defaultDinnerOptions])].slice(0, 30);
     if(typeof data.lastDinner === 'string') lastDinner = data.lastDinner;
+    if(typeof data.activeTheme === 'string') activeTheme = data.activeTheme;
     saveLocal();
+    applyTheme(activeTheme, false);
     renderPeople(); renderProfiles(); renderHoro(); renderMsg(); renderMemories(); renderPhotos(); renderInteractiveBoards(); renderTodayPanel();
     applyingRemote = false;
   }
@@ -842,6 +890,31 @@
       : `${selectedCourseOwner} 今天没有课`;
     document.getElementById('todayCat').innerText = catStatus;
     document.getElementById('todayDinner').innerText = lastDinner || '还没抽签';
+  }
+
+  function renderThemes(){
+    document.getElementById('themeBar').innerHTML = themes.map(theme=>`
+      <button class="${activeTheme === theme.id ? 'active' : ''}" onclick="setTheme('${theme.id}')">${theme.label}</button>
+    `).join('');
+  }
+
+  function applyTheme(themeId, shouldSave=true){
+    activeTheme = themes.some(theme => theme.id === themeId) ? themeId : 'lala';
+    document.body.className = activeTheme === 'lala' ? '' : 'theme-' + activeTheme;
+    renderThemes();
+    if(shouldSave) save();
+  }
+
+  function setTheme(themeId){
+    applyTheme(themeId, true);
+  }
+
+  function switchView(view){
+    activeView = view;
+    document.querySelectorAll('.viewPage').forEach(page => page.classList.toggle('active', page.id === 'view-' + view));
+    document.querySelectorAll('.bottomNav a').forEach(link => link.classList.toggle('active', link.dataset.view === view));
+    saveLocal();
+    window.scrollTo({ top:0, behavior:'smooth' });
   }
 
   messages = normalizeMessages(messages);
@@ -1340,6 +1413,8 @@
         if(Array.isArray(data.moodHistory)) moodHistory = data.moodHistory;
         if(Array.isArray(data.catDiary)) catDiary = data.catDiary;
         if(typeof data.lastDinner === 'string') lastDinner = data.lastDinner;
+        if(typeof data.activeTheme === 'string') activeTheme = data.activeTheme;
+        applyTheme(activeTheme, false);
         save(); renderPeople(); renderProfiles(); renderHoro(); renderMsg(); renderMemories(); renderPhotos(); renderInteractiveBoards();
         alert('宿舍数据导入成功！');
       } catch (error) {
@@ -1373,6 +1448,8 @@
     }
   }
 
+  applyTheme(activeTheme, false);
+  switchView(activeView);
   renderPeople();
   renderProfiles();
   renderCourses();
