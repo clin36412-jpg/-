@@ -16,15 +16,21 @@
       --yellow:#fff2a6;
       --mint:#9ee6cf;
       --sky:#dff3ff;
+      --peach:#ffd8c2;
+      --lime:#e7f8b9;
+      --lav:#eadfff;
+      --blue:#8cc8ff;
     }
     body {
       margin:0;
       font-family: "Comic Sans MS", "PingFang SC", "Microsoft YaHei", sans-serif;
       color:var(--text);
       background:
-        radial-gradient(circle at 10% 10%, #dff3ff 0 18%, transparent 19%),
+        radial-gradient(circle at 10% 10%, var(--sky) 0 18%, transparent 19%),
         radial-gradient(circle at 90% 0%, #e5fff6 0 22%, transparent 23%),
-        linear-gradient(135deg, #fff9fd 0%, #f0fff8 48%, #fffbea 100%);
+        radial-gradient(circle at 14% 84%, #fff0c6 0 14%, transparent 15%),
+        radial-gradient(circle at 84% 72%, #f2e6ff 0 16%, transparent 17%),
+        linear-gradient(135deg, #fff9fd 0%, #effcff 34%, #f2fff4 66%, #fff7de 100%);
       min-height:100vh;
     }
     .bg {
@@ -58,7 +64,7 @@
       border:2px solid rgba(189,238,221,.95);
       border-radius:28px;
       padding:18px;
-      box-shadow:0 14px 36px rgba(72,170,137,.13);
+      box-shadow:0 14px 36px rgba(72,170,137,.13), inset 0 1px 0 rgba(255,255,255,.72);
       backdrop-filter: blur(12px);
       position:relative;
       overflow:hidden;
@@ -66,7 +72,7 @@
     .card:before{
       content:"";
       position:absolute; right:-35px; top:-35px; width:90px; height:90px;
-      border-radius:50%; background:#e5fff6; opacity:.8;
+      border-radius:50%; background:linear-gradient(135deg,#e5fff6,#fff2c7); opacity:.8;
     }
     .title {
       display:flex; align-items:center; gap:8px;
@@ -90,22 +96,22 @@
     }
     .upload input { display:none; }
     button {
-      border:0; border-radius:18px; background:#ff8fbd; color:#fff;
+      border:0; border-radius:18px; background:linear-gradient(135deg,#ff7aa8,#ff9fcb); color:#fff;
       font-weight:900; padding:11px 14px; cursor:pointer;
       box-shadow:0 8px 18px rgba(255,90,165,.2);
       transition:.15s transform, .15s background; margin:4px;
       font-family:inherit;
     }
-    button:hover { transform:translateY(-2px); background:#ff5aa5; }
-    .btn2 { background:#9b5de5; }
-    .btn3 { background:#ffb703; color:#6b4700; }
+    button:hover { transform:translateY(-2px); filter:saturate(1.08); }
+    .btn2 { background:linear-gradient(135deg,#7c6ee6,#9f8cff); }
+    .btn3 { background:linear-gradient(135deg,#ffcf4a,#ffb703); color:#6b4700; }
     .danger { background:#f05252; }
     .toolbar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:12px; }
     .toolbar button, .toolbar label { flex:0 1 auto; }
     .hiddenInput { display:none; }
     .bigText {
-      min-height:96px; border-radius:24px; background:#fff6fb;
-      border:2px dashed #ffc1dc;
+      min-height:96px; border-radius:24px; background:linear-gradient(135deg,#fff6fb,#f2fff8);
+      border:2px dashed #bdeedd;
       display:flex; align-items:center; justify-content:center;
       text-align:center; padding:18px; font-size:22px; font-weight:900;
       color:#7a365d; line-height:1.5;
@@ -140,7 +146,7 @@
     .courseSummary { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:12px; }
     .courseSummary .item { min-height:76px; }
     .todayPanel { display:grid; grid-template-columns:1.2fr repeat(3,1fr); gap:12px; margin-top:16px; }
-    .todayTile { background:#fff; border:1px solid #bdeedd; border-radius:20px; padding:14px; min-height:104px; }
+    .todayTile { background:linear-gradient(135deg,#fff,#f4fffb); border:1px solid #bdeedd; border-radius:20px; padding:14px; min-height:104px; }
     .todayTile b { display:block; color:#3e8f7b; margin-bottom:6px; }
     .bar { height:12px; background:#ffe0ef; border-radius:999px; overflow:hidden; margin:10px 0; }
     .bar span { display:block; height:100%; background:linear-gradient(90deg,#ff8fbd,#ff5aa5); border-radius:999px; }
@@ -230,6 +236,13 @@
       border:2px solid #ff8fbd;
       background:linear-gradient(135deg,#fff,#fff2f8);
     }
+    .gameCanvasWrap {
+      background:linear-gradient(180deg,#dff3ff,#fff9fd);
+      border:2px solid #bdeedd; border-radius:22px; overflow:hidden;
+      position:relative; margin-top:10px;
+    }
+    #fishGame { width:100%; height:260px; display:block; touch-action:none; }
+    .gameHud { display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-top:10px; }
     .bottomNav {
       position:fixed; left:50%; bottom:14px; transform:translateX(-50%);
       width:min(720px, calc(100% - 24px)); z-index:20;
@@ -406,6 +419,25 @@
     </div>
   </section>
 
+  <section class="card" id="miniGame" style="margin-top:16px;">
+    <div class="title">🎣 班戟接小鱼</div>
+    <div class="bigText" id="fishGameIntro">20 秒内接住掉下来的小鱼，漏掉也没关系，班戟会假装没看见。</div>
+    <div class="gameCanvasWrap">
+      <canvas id="fishGame" width="760" height="260"></canvas>
+    </div>
+    <div class="gameHud">
+      <span class="badge" id="fishScore">分数 0</span>
+      <span class="badge" id="fishTime">时间 20</span>
+      <span class="badge" id="fishBest">最高 0</span>
+    </div>
+    <div class="row" style="margin-top:10px;">
+      <button onclick="moveFishCat(-1)">← 左移</button>
+      <button class="btn2" onclick="startFishGame()">开始游戏</button>
+      <button onclick="moveFishCat(1)">右移 →</button>
+    </div>
+    <p class="small">电脑可以用 ← → 键，手机点左右按钮也能玩。</p>
+  </section>
+
   <section class="card" style="margin-top:16px;">
     <div class="title">🍜 今晚吃什么抽签</div>
     <div class="bigText" id="dinnerResult">选择困难症交给命运。</div>
@@ -517,6 +549,17 @@
   let cloudReady = false;
   let applyingRemote = false;
   let cloudSaveTimer = null;
+  let fishGame = {
+    running:false,
+    score:0,
+    time:20,
+    catX:360,
+    fish:[],
+    lastSpawn:0,
+    lastTick:0,
+    timer:null,
+    best:Number(localStorage.getItem('lalaFishBest_v1') || 0)
+  };
 
   const peopleDefault = [
     { name:'洪艺嘉', birthday:'8.8', sign:'狮子座', avatar:'🦁', score:92 },
@@ -1224,6 +1267,140 @@
     save(); renderTodayPanel();
   }
 
+  function fishCanvas(){
+    return document.getElementById('fishGame');
+  }
+
+  function drawFishGame(){
+    const canvas = fishCanvas();
+    if(!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+    ctx.clearRect(0,0,width,height);
+
+    const bg = ctx.createLinearGradient(0,0,0,height);
+    bg.addColorStop(0,'#dff3ff');
+    bg.addColorStop(1,'#fff9fd');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0,0,width,height);
+
+    ctx.fillStyle = 'rgba(126,201,178,.22)';
+    for(let i=0;i<14;i++){
+      ctx.beginPath();
+      ctx.arc((i*73 + 38) % width, 38 + (i%5)*34, 6, 0, Math.PI*2);
+      ctx.fill();
+    }
+
+    fishGame.fish.forEach(fish => {
+      ctx.save();
+      ctx.translate(fish.x, fish.y);
+      ctx.fillStyle = fish.color;
+      ctx.beginPath();
+      ctx.ellipse(0,0,15,9,0,0,Math.PI*2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(-15,0);
+      ctx.lineTo(-27,-9);
+      ctx.lineTo(-27,9);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = '#42515a';
+      ctx.beginPath();
+      ctx.arc(7,-2,2,0,Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+    });
+
+    ctx.fillStyle = '#fff3dc';
+    ctx.strokeStyle = '#42515a';
+    ctx.lineWidth = 3;
+    const catY = height - 34;
+    ctx.beginPath();
+    ctx.roundRect(fishGame.catX - 46, catY - 28, 92, 48, 20);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#fff3dc';
+    ctx.beginPath();
+    ctx.moveTo(fishGame.catX - 32, catY - 24);
+    ctx.lineTo(fishGame.catX - 18, catY - 48);
+    ctx.lineTo(fishGame.catX - 4, catY - 24);
+    ctx.moveTo(fishGame.catX + 32, catY - 24);
+    ctx.lineTo(fishGame.catX + 18, catY - 48);
+    ctx.lineTo(fishGame.catX + 4, catY - 24);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#42515a';
+    ctx.fillText('=•ᴥ•=', fishGame.catX - 20, catY + 2);
+  }
+
+  function updateFishHud(){
+    document.getElementById('fishScore').innerText = '分数 ' + fishGame.score;
+    document.getElementById('fishTime').innerText = '时间 ' + fishGame.time;
+    document.getElementById('fishBest').innerText = '最高 ' + fishGame.best;
+  }
+
+  function startFishGame(){
+    fishGame.running = true;
+    fishGame.score = 0;
+    fishGame.time = 20;
+    fishGame.fish = [];
+    fishGame.lastSpawn = 0;
+    fishGame.lastTick = performance.now();
+    fishGame.catX = fishCanvas().width / 2;
+    document.getElementById('fishGameIntro').innerText = '小鱼掉下来啦，快接住！';
+    clearInterval(fishGame.timer);
+    fishGame.timer = setInterval(() => {
+      fishGame.time -= 1;
+      if(fishGame.time <= 0) endFishGame();
+      updateFishHud();
+    }, 1000);
+    updateFishHud();
+    requestAnimationFrame(stepFishGame);
+  }
+
+  function endFishGame(){
+    fishGame.running = false;
+    clearInterval(fishGame.timer);
+    if(fishGame.score > fishGame.best){
+      fishGame.best = fishGame.score;
+      localStorage.setItem('lalaFishBest_v1', String(fishGame.best));
+    }
+    document.getElementById('fishGameIntro').innerText = '本局得分：' + fishGame.score + '。班戟表示还可以再来一把。';
+    updateFishHud();
+    drawFishGame();
+  }
+
+  function stepFishGame(now){
+    if(!fishGame.running) return;
+    const delta = Math.min(34, now - fishGame.lastTick);
+    fishGame.lastTick = now;
+    if(now - fishGame.lastSpawn > 650){
+      fishGame.fish.push({
+        x: 32 + Math.random() * (fishCanvas().width - 64),
+        y: -20,
+        speed: 1.8 + Math.random() * 2.2,
+        color: ['#ff7aa8','#7c6ee6','#3e8f7b','#ffb703'][Math.floor(Math.random()*4)]
+      });
+      fishGame.lastSpawn = now;
+    }
+    fishGame.fish.forEach(fish => fish.y += fish.speed * delta / 16);
+    fishGame.fish = fishGame.fish.filter(fish => {
+      const caught = fish.y > fishCanvas().height - 62 && Math.abs(fish.x - fishGame.catX) < 54;
+      if(caught) fishGame.score += 1;
+      return !caught && fish.y < fishCanvas().height + 30;
+    });
+    updateFishHud();
+    drawFishGame();
+    requestAnimationFrame(stepFishGame);
+  }
+
+  function moveFishCat(direction){
+    const canvas = fishCanvas();
+    fishGame.catX = Math.max(46, Math.min(canvas.width - 46, fishGame.catX + direction * 58));
+    drawFishGame();
+  }
+
   function addMsg(){
     const input = document.getElementById('msgInput');
     const author = document.getElementById('author').value;
@@ -1384,6 +1561,12 @@
   fetchWeather();
   countdown();
   setInterval(countdown,1000);
+  updateFishHud();
+  drawFishGame();
+  window.addEventListener('keydown', event => {
+    if(event.key === 'ArrowLeft') moveFishCat(-1);
+    if(event.key === 'ArrowRight') moveFishCat(1);
+  });
   initCloud();
 </script>
 </body>
