@@ -54,7 +54,7 @@
       text-shadow:3px 3px 0 #fff, 6px 6px 0 #c9f3e6;
     }
     .sub { max-width:760px; margin:0 auto; line-height:1.75; color:#7d6070; }
-    .grid { display:grid; gap:16px; }
+    .grid { display:grid; gap:16px; align-items:start; }
     .three { grid-template-columns:repeat(3, 1fr); }
     .two { grid-template-columns:repeat(2, 1fr); }
     .four { grid-template-columns:repeat(4, 1fr); }
@@ -135,6 +135,25 @@
       padding:10px 6px; text-align:center; font-size:12px;
     }
     @media (max-width:520px){ .weatherMeta,.forecast { grid-template-columns:1fr; } }
+    .rankList { display:grid; gap:8px; }
+    .rankItem {
+      display:grid; grid-template-columns:auto 1fr auto; gap:10px; align-items:center;
+      background:#fff; border:1px solid #ffd4e8; border-radius:16px; padding:10px;
+    }
+    .rankNo {
+      width:28px; height:28px; border-radius:10px;
+      display:flex; align-items:center; justify-content:center;
+      background:linear-gradient(135deg,#ffcf4a,#ff8fbd); color:#fff; font-weight:1000;
+    }
+    .rankItem a { color:#d94f93; text-decoration:none; font-weight:900; }
+    .rankItem a:hover { text-decoration:underline; }
+    .storyBox {
+      min-height:166px; justify-content:flex-start; align-items:flex-start;
+      text-align:left; font-size:20px;
+    }
+    .storyBox a { color:#d94f93; text-decoration:none; font-weight:1000; }
+    .storyBox a:hover { text-decoration:underline; }
+    .storyBox span { display:block; font-size:13px; color:#8b7180; margin-top:10px; font-weight:700; }
     .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
     .row > * { flex:1; }
     .tabs {
@@ -252,7 +271,7 @@
     .bottomNav {
       position:fixed; left:50%; bottom:14px; transform:translateX(-50%);
       width:min(720px, calc(100% - 24px)); z-index:20;
-      display:grid; grid-template-columns:repeat(5,1fr); gap:6px;
+      display:grid; grid-template-columns:repeat(6,1fr); gap:6px;
       padding:8px; border-radius:24px; background:rgba(255,255,255,.92);
       border:2px solid #ffd4e8; box-shadow:0 14px 36px rgba(255,90,165,.22);
       backdrop-filter:blur(14px);
@@ -415,6 +434,36 @@
     </div>
   </section>
 
+  <section class="grid three" id="outside" style="margin-top:16px;">
+    <div class="card">
+      <div class="title">🎭 今日宿舍小剧场</div>
+      <div class="bigText storyBox" id="miniTheater">正在排练今日剧情...</div>
+      <button onclick="pickMiniTheater()">换一幕</button>
+    </div>
+
+    <div class="card">
+      <div class="title">🎧 今日幸运 BGM</div>
+      <div class="bigText storyBox" id="luckyBgm">正在等音乐榜单刷新...</div>
+      <div class="row">
+        <button onclick="pickLuckyBgm()">换一首</button>
+        <button class="btn2" onclick="fetchMusicChart()">刷新榜单</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="title">🔥 每日热搜</div>
+      <div class="rankList" id="hotTrends"><div class="empty">正在读取百度热搜...</div></div>
+      <button onclick="fetchHotTrends()">刷新热搜</button>
+      <p class="small" id="hotUpdated">真实数据来自 60s API 的百度热榜。</p>
+    </div>
+  </section>
+
+  <section class="card" id="musicRank" style="margin-top:16px;">
+    <div class="title">🎵 网易云热歌榜</div>
+    <div class="rankList" id="musicChart"><div class="empty">正在读取音乐榜单...</div></div>
+    <p class="small" id="musicUpdated">会自动取热歌榜前几首，也会给今日幸运 BGM 使用。</p>
+  </section>
+
   <section class="grid three" id="game" style="margin-top:16px;">
     <div class="card">
       <div class="title">🎮 王者开黑房间</div>
@@ -563,6 +612,7 @@
 <nav class="bottomNav" aria-label="手机快捷导航">
   <a href="#today"><span>⏳</span>今日</a>
   <a href="#life"><span>📚</span>课表</a>
+  <a href="#outside"><span>🔥</span>热榜</a>
   <a href="#game"><span>🎮</span>开黑</a>
   <a href="#album"><span>🐾</span>照片</a>
   <a href="#messagesSection"><span>💌</span>留言</a>
@@ -677,6 +727,37 @@
 
   const roles = ['对抗路', '打野', '中路', '发育路', '游走', '今晚负责带飞', '今晚负责可爱'];
   const activities = ['王者三排', '宿舍夜谈', '一起复习', '看电影', '买奶茶', '拍班戟照片', '操场散步'];
+  let hotTrends = [];
+  let musicChart = [];
+  const hotTrendSources = [
+    { name:'百度热榜', url:'https://60s.viki.moe/v2/baidu' },
+    { name:'B站热搜', url:'https://60s.viki.moe/v2/bili' },
+    { name:'抖音热点', url:'https://60s.viki.moe/v2/douyin' },
+    { name:'微博热搜', url:'https://60s.viki.moe/v2/weibo' }
+  ];
+  const fallbackHotTrends = [
+    { title:'今天也要好好吃饭', score_desc:'宿舍热议' },
+    { title:'班戟可爱程度再创新高', score_desc:'全宿舍沸腾' },
+    { title:'早八到底是谁发明的', score_desc:'持续讨论' },
+    { title:'今晚到底吃什么', score_desc:'选择困难' },
+    { title:'三排是快乐还是修行', score_desc:'王者专区' }
+  ];
+  const fallbackSongs = [
+    { title:'晴天', artist:'周杰伦', link:'https://music.163.com/' },
+    { title:'想见你想见你想见你', artist:'八三夭', link:'https://music.163.com/' },
+    { title:'带我去找夜生活', artist:'告五人', link:'https://music.163.com/' },
+    { title:'小幸运', artist:'田馥甄', link:'https://music.163.com/' },
+    { title:'New Boy', artist:'朴树', link:'https://music.163.com/' }
+  ];
+  const theaterScenes = [
+    '{a} 今天宣布自己是 lala land 的临时导演，要求 {b} 配合演一场“上课路上突然变身”的戏，{c} 负责在旁边严肃点头，班戟负责用眼神审核剧本。',
+    '{a} 发现今日热搜太离谱，于是决定开一个宿舍发布会。{b} 负责提问，{c} 负责装作听懂，班戟在桌下保持神秘沉默。',
+    '{a} 说今晚必须有 BGM，于是 {b} 随机播放一首歌，{c} 听到副歌立刻进入走秀状态，班戟表示这段可以加精。',
+    '宿舍突然收到一封来自未来的信：{a} 会点到最好吃的晚饭，{b} 会在王者里打出高光，{c} 会负责把这件事讲得像连续剧。',
+    '{a} 今天是勇者，{b} 是军师，{c} 是负责吐槽的旁白。三个人的任务是：在不纠结超过三分钟的情况下决定今晚吃什么。'
+  ];
+  const bgmMoods = ['适合走路时假装在电影里', '适合写作业但心已经飞走', '适合洗澡大合唱', '适合出门买饭', '适合三个人一起发疯', '适合安静看班戟'];
+  const heroMissions = ['只准温柔交流', '第一局不许怪队友', '赢了截图，输了装作没发生', '谁先红温谁请奶茶', '打完必须夸一句队友', '输赢都要快乐收场'];
   const heroes = [
     '瑶','蔡文姬','小乔','貂蝉','孙尚香','李白','韩信','王昭君','鲁班七号','大乔','庄周','妲己',
     '安琪拉','甄姬','西施','上官婉儿','不知火舞','海月','弈星','沈梦溪','干将莫邪','周瑜','诸葛亮',
@@ -1096,6 +1177,10 @@
     return options[hash % options.length];
   }
 
+  function randomItem(options){
+    return options[Math.floor(Math.random() * options.length)];
+  }
+
   function renderHoro(){
     document.getElementById('horoscope').innerHTML = people.map(p=>`
       <div class="item">
@@ -1335,11 +1420,109 @@
     }
   }
 
+  function renderHotTrends(){
+    const list = (hotTrends.length ? hotTrends : fallbackHotTrends).slice(0,6);
+    document.getElementById('hotTrends').innerHTML = list.map((item,i)=>`
+      <div class="rankItem">
+        <div class="rankNo">${i + 1}</div>
+        <div>
+          ${item.url || item.link ? `<a href="${item.url || item.link}" target="_blank" rel="noopener">${escapeHtml(item.title)}</a>` : `<b>${escapeHtml(item.title)}</b>`}
+          <br><span class="small">${escapeHtml(item.type_desc || item.score_desc || '今日热度在线')}</span>
+        </div>
+        <span class="badge">${escapeHtml(item.score_desc || item.score || item.hot_value || 'hot')}</span>
+      </div>
+    `).join('');
+  }
+
+  async function fetchHotTrends(){
+    const box = document.getElementById('hotTrends');
+    box.innerHTML = '<div class="empty">正在读取每日热搜...</div>';
+    for(const source of hotTrendSources){
+      try {
+        const response = await fetch(source.url);
+        if(!response.ok) throw new Error('hot trends request failed');
+        const data = await response.json();
+        hotTrends = Array.isArray(data.data) ? data.data : [];
+        if(!hotTrends.length) throw new Error('empty hot trends');
+        renderHotTrends();
+        document.getElementById('hotUpdated').innerText = '更新时间：' + new Date().toLocaleString('zh-CN') + ' · ' + source.name;
+        return;
+      } catch (error) {
+        hotTrends = [];
+      }
+    }
+    renderHotTrends();
+    document.getElementById('hotUpdated').innerText = '热搜接口暂时没读到，先显示宿舍备用热榜。';
+  }
+
+  function songArtist(song){
+    if(Array.isArray(song.artist)) return song.artist.slice(0,2).map(artist => artist.name).join('、');
+    return song.artist || '未知歌手';
+  }
+
+  function renderMusicChart(){
+    const list = (musicChart.length ? musicChart : fallbackSongs).slice(0,8);
+    document.getElementById('musicChart').innerHTML = list.map((song,i)=>`
+      <div class="rankItem">
+        <div class="rankNo">${i + 1}</div>
+        <div>
+          ${song.link ? `<a href="${song.link}" target="_blank" rel="noopener">${escapeHtml(song.title)}</a>` : `<b>${escapeHtml(song.title)}</b>`}
+          <br><span class="small">${escapeHtml(songArtist(song))}${song.rank_name ? ' · ' + escapeHtml(song.rank_name) : ''}</span>
+        </div>
+        <span class="badge">${escapeHtml(song.duration_desc || 'BGM')}</span>
+      </div>
+    `).join('');
+  }
+
+  async function fetchMusicChart(){
+    const box = document.getElementById('musicChart');
+    box.innerHTML = '<div class="empty">正在读取网易云热歌榜...</div>';
+    try {
+      const response = await fetch('https://60s.viki.moe/v2/ncm-rank/3778678?size=12');
+      if(!response.ok) throw new Error('music chart request failed');
+      const data = await response.json();
+      musicChart = Array.isArray(data.data) ? data.data : [];
+      if(!musicChart.length) throw new Error('empty music chart');
+      renderMusicChart();
+      pickLuckyBgm(true);
+      document.getElementById('musicUpdated').innerText = '更新时间：' + new Date().toLocaleString('zh-CN') + ' · 网易云热歌榜';
+    } catch (error) {
+      musicChart = [];
+      renderMusicChart();
+      pickLuckyBgm(true);
+      document.getElementById('musicUpdated').innerText = '音乐榜单暂时没读到，先显示备用歌单。';
+    }
+  }
+
+  function pickMiniTheater(){
+    const names = people.map(p => p.name).sort(() => Math.random() - .5);
+    const story = randomItem(theaterScenes)
+      .replace('{a}', names[0])
+      .replace('{b}', names[1])
+      .replace('{c}', names[2]);
+    document.getElementById('miniTheater').innerHTML =
+      `${escapeHtml(story)}<span>今日关键词：${escapeHtml(dailyPick(['离谱但合理','快乐满格','先笑再说','全员可爱','剧情反转','班戟认证'], 'theater'))}</span>`;
+  }
+
+  function pickLuckyBgm(keepDaily=false){
+    const songs = musicChart.length ? musicChart : fallbackSongs;
+    const song = keepDaily ? dailyPick(songs, 'bgm') : randomItem(songs);
+    const mood = keepDaily ? dailyPick(bgmMoods, 'bgm-mood') : randomItem(bgmMoods);
+    const link = song.link ? `<a href="${song.link}" target="_blank" rel="noopener">${escapeHtml(song.title)}</a>` : escapeHtml(song.title);
+    document.getElementById('luckyBgm').innerHTML =
+      `${link}<br><span>${escapeHtml(songArtist(song))} · ${escapeHtml(mood)}</span>`;
+  }
+
   function pickWeather(){ document.getElementById('weather').innerText = weatherTips[Math.floor(Math.random()*weatherTips.length)]; }
   function pickHero(){ document.getElementById('gamePlan').innerText = '今晚王者身份：' + roles[Math.floor(Math.random()*roles.length)] + ' 🎮'; }
   function pickActivity(){ document.getElementById('gamePlan').innerText = '今晚安排：' + activities[Math.floor(Math.random()*activities.length)] + ' ✨'; }
   function pickKingLuck(){ document.getElementById('kingZone').innerText = kingLuck[Math.floor(Math.random()*kingLuck.length)]; }
-  function pickHeroChallenge(){ document.getElementById('kingZone').innerText = '随机英雄挑战：今晚必须玩 ' + heroes[Math.floor(Math.random()*heroes.length)] + '！'; }
+  function pickHeroChallenge(){
+    const hero = randomItem(heroes);
+    const role = randomItem(['对抗路','打野','中路','发育路','游走']);
+    const mission = randomItem(heroMissions);
+    document.getElementById('kingZone').innerText = `随机英雄挑战：${role} ${hero}。附加任务：${mission}。`;
+  }
 
   function setMood(person, mood){
     moods[person] = mood;
@@ -1756,6 +1939,10 @@
   renderMemories();
   renderPhotos();
   renderInteractiveBoards();
+  pickMiniTheater();
+  pickLuckyBgm(true);
+  fetchHotTrends();
+  fetchMusicChart();
   fetchWeather();
   countdown();
   setInterval(countdown,1000);
